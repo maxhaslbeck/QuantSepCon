@@ -1,0 +1,2 @@
+# QuantSepCon
+Quantitative Separating Connectives
