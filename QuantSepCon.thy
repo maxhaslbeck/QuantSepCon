@@ -158,8 +158,31 @@ qed
  
 
 
+
+
 lemma star_comm: "(X **q Y) = (Y **q X)"
-  sorry
+  unfolding sep_conj_q_SUP
+  apply(rule ext)
+  apply(rule Sup_cong)
+  apply auto
+  subgoal
+    apply (auto simp add: mult.commute sep_disj_commute sep_add_commute)
+    done
+  subgoal for a b
+    apply(rule Set.image_eqI[where x="(b,a)"])
+    apply auto
+      apply (simp add: mult.commute)
+    using local.sep_add_commute apply auto[1]
+    apply (simp add: sep_disj_commute)
+    done
+  done
+
+lemma star_comm_nice: "(X **q Y) = (Y **q X)"
+  unfolding sep_conj_q_SUP
+  apply(rule ext)
+  apply(rule Sup_cong)
+  apply (auto simp add: mult.commute sep_disj_commute sep_add_commute)
+  done
 
 
 lemma emp_neutral1:
