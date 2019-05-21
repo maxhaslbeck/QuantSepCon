@@ -155,38 +155,34 @@ proof (rule ext)
 qed
 
 
-lemma emp_neutral[sep_algebra_simps]:
-  "(X **q sep_empty_q) = X"
-  "(sep_empty_q **q X) = X"
-  unfolding sep_conj_q_def
-   apply(rule ext)
-  unfolding  sep_empty_q_def
-  unfolding emb_def
-   apply(rule antisym)
-  subgoal
-  thm Sup_least
-    apply(rule Sup_least)
-    apply(simp)
-  apply auto
-  done
-  subgoal
-  thm Sup_upper
-   apply(rule Sup_upper)
-   apply(simp)
-   apply auto
-  done
-
-  
-
-  
-(*  thm Complete_Lattices.complete_lattice_class.Sup_le_iff
-  apply(simp only:Complete_Lattices.complete_lattice_class.Sup_le_iff)
-  *)  
-  done
+ 
 
 
 lemma star_comm: "(X **q Y) = (Y **q X)"
   sorry
+
+
+lemma emp_neutral1:
+  "(X **q sep_empty_q) = X"
+  unfolding sep_conj_q_def sep_empty_q_def emb_def
+  apply(rule ext)
+  apply(rule antisym)
+  subgoal
+    by (auto intro: Sup_least)
+  subgoal
+    by (auto intro: Sup_upper)
+  done
+ 
+
+lemma emp_neutral2 : 
+  "(sep_empty_q **q X) = X"
+  apply(simp only: star_comm)
+  apply(rule emp_neutral1) done
+
+lemmas emp_neutral = emp_neutral1 emp_neutral2
+
+
+thm emp_neutral
 
 
 lemma sep_conj_q_left_commute: "(P **q Q **q R) = (Q **q P **q R)"
