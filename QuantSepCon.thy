@@ -28,7 +28,18 @@ definition
   sep_conj_q :: "('a \<Rightarrow> ennreal) \<Rightarrow> ('a \<Rightarrow> ennreal) \<Rightarrow> ('a \<Rightarrow> ennreal)" (infixr "**q" 35)
   where
   "P **q Q \<equiv> \<lambda>h. Sup { P x * Q y | x y. h=x+y \<and> x ## y}" (* why not Sup ? *)
- 
+
+definition qStar :: "('a \<Rightarrow> ennreal) \<Rightarrow> ('a \<Rightarrow> ennreal) \<Rightarrow> 'a \<Rightarrow> ennreal" where
+"qStar P Q = (\<lambda>h. ( SUP (h1,h2):{(h1,h2)| h1 h2. h1 ## h2 \<and> h1 + h2 = h} . P h1 * Q h2))"
+
+lemma "qStar P Q = (P **q Q)"
+  unfolding qStar_def sep_conj_q_def
+  thm ext
+  apply(rule ext)
+  thm arg_cong
+  apply(rule arg_cong[where f=Sup])
+  apply auto
+  done
 
 lemma sep_conj_q_alt : "(P **q Q) = (\<lambda>h. (SUP (x,y): {(x,y). h=x+y \<and> x ## y}. P x * Q y))"
   unfolding  sep_conj_q_def
@@ -147,7 +158,31 @@ qed
 lemma emp_neutral[sep_algebra_simps]:
   "(X **q sep_empty_q) = X"
   "(sep_empty_q **q X) = X"
-  sorry
+  unfolding sep_conj_q_def
+   apply(rule ext)
+  unfolding  sep_empty_q_def
+  unfolding emb_def
+   apply(rule antisym)
+  subgoal
+  thm Sup_least
+    apply(rule Sup_least)
+    apply(simp)
+  apply auto
+  done
+  subgoal
+  thm Sup_upper
+   apply(rule Sup_upper)
+   apply(simp)
+   apply auto
+  done
+
+  
+
+  
+(*  thm Complete_Lattices.complete_lattice_class.Sup_le_iff
+  apply(simp only:Complete_Lattices.complete_lattice_class.Sup_le_iff)
+  *)  
+  done
 
 
 lemma star_comm: "(X **q Y) = (Y **q X)"
