@@ -209,7 +209,6 @@ lemma emp_neutral1:
   subgoal
     by (auto intro: Sup_upper)
   done
- 
 
 lemma emp_neutral2 : 
   "(sep_empty_q **q X) = X"
@@ -356,6 +355,57 @@ lemma sep_conj_q_impl :
   by (simp add: P Q le_funD le_funI)  
 
 
+subsubsection \<open>is @{term "(-*qq)"} monotonic\<close>
+ 
+lemma sep_impl_q_monoR: 
+  shows "Y \<le> Y' \<Longrightarrow> (P -*qq Y) \<le> (P -*qq Y')"  
+  unfolding sep_impl_qq_def
+  apply(rule le_funI)
+  apply(rule Inf_mono)
+  apply auto
+  subgoal for h h' apply(rule exI[where x=h']) 
+    apply auto  
+    by (simp add: divide_right_mono_ennreal le_funD)   
+  done
+
+lemma nn: "(\<not> x < (top::ennreal)) = (x = top)" 
+  using top.not_eq_extremum by blast
+
+
+lemma "(a::ennreal) div b = a / b" by auto
+  
+lemma ennreal_inverse_antimono:
+  "(a::ennreal) \<le> b \<Longrightarrow> inverse b \<le> inverse a"
+  apply(cases a; cases b; cases "a=0"; cases "b=0") 
+     apply simp_all
+   apply(simp add: inverse_ennreal)   
+  using ennreal_neq_top top.extremum_uniqueI by blast   
+
+lemma sep_impl_q_monoL: 
+  shows "P' \<le> P \<Longrightarrow> (P -*qq Y) \<le> (P' -*qq Y)"  
+  unfolding sep_impl_qq_def
+  apply(rule le_funI)
+  apply(rule Inf_mono)
+  apply auto
+  subgoal for h h' apply(rule exI[where x=h']) 
+    apply (auto) apply(drule le_funD[where x=h']) apply simp
+    apply(cases "P h'<\<infinity>")
+    subgoal apply auto apply(drule le_funD[where x=h']) 
+      apply(drule ennreal_inverse_antimono) 
+      unfolding divide_ennreal_def 
+      using mult_left_mono by fastforce 
+    subgoal by (auto simp: nn)
+    done
+  done
+
+
+lemma sep_impl_q_mono: 
+  shows "P' \<le> P \<Longrightarrow> Y \<le> Y' \<Longrightarrow> (P -*qq Y) \<le> (P' -*qq Y')"  
+  apply(rule order.trans)
+  apply(rule sep_impl_q_monoL) apply simp
+  apply(rule sep_impl_q_monoR) by simp
+
+
 subsubsection \<open>adjointness of star and magicwand\<close>
 
 text \<open>theorem 3.9\<close>
@@ -421,8 +471,6 @@ lemma ennreal_mult_divide: "b > 0 \<Longrightarrow> b < (\<infinity>::ennreal) \
 lemma "(P::_\<Rightarrow>ennreal) h' * (Y (h + h') / P h') = FF \<Longrightarrow> G"
   apply(subst (asm) ennreal_mult_divide) oops
 
-lemma nn: "(\<not> x < (top::ennreal)) = (x = top)" 
-  using top.not_eq_extremum by blast
  
 lemma "\<infinity> / (\<infinity>::ennreal) = 0"
   by simp
@@ -644,6 +692,9 @@ lemma tightest_intuitionistic_expectations_wand_general:
     "\<And>X'. intuitionistic_q X' \<Longrightarrow> X' \<le> X \<Longrightarrow>  X' \<le> (\<^bold>1 -*qq X)"
   sorry
 
+
+
+end
 
 
 end
