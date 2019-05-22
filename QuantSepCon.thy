@@ -108,7 +108,12 @@ subsection \<open>Quantitative Separating Implication - Magic Wand\<close>
 definition
   sep_impl_q :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> ennreal) \<Rightarrow> ('a \<Rightarrow> ennreal)" (infixr "-*q" 35)
   where
-  "P -*q Q \<equiv> undefined"
+  "P -*q Q \<equiv> \<lambda>h. Inf {  Q (h + h') | h'. h ## h' \<and> P h'}"
+
+lemma sep_impl_q_alt:
+  "(P -*q Q) = (\<lambda>h. INF h': { h'. h ## h' \<and> P h'}. Q (h + h'))"
+  unfolding sep_impl_q_def apply(rule ext)
+  apply (rule arg_cong[where f=Inf]) by auto
 
 
 
@@ -340,9 +345,48 @@ subsubsection \<open>adjointness of star and magicwand\<close>
 
 text \<open>theorem 3.9\<close>
 
-lemma adjoint: "(X **q (emb P)) \<le> Y \<longleftrightarrow> X \<le> sep_impl_q P Y"
-  sorry
+lemma adjoint: "(X **q (emb P)) \<le> Y \<longleftrightarrow> X \<le> (P -*q Y)"
+proof
+  assume "(X **q emb P) \<le> Y"
+  with star_comm have *: "(emb P **q X) \<le> Y"
+    by auto
+  then have "\<And>h'. (SUP (x, y):{(x, y) |x y. h' = x + y \<and> x ## y}. emb P x * X y)  \<le> Y h'"    
+    using * by (auto simp: le_fun_def sep_conj_q_SUP)
+  then have eq99: "\<And>h' h1' h2'. h' = h1' + h2' \<and> h1' ## h2' \<Longrightarrow> emb P h1' * X h2' \<le> Y h'"
+    by(auto simp add: Sup_le_iff)
+  have eq99': "\<And>h' h1' h2'. h' = h1' + h2' \<and> h1' ## h2' \<and> P h1' \<Longrightarrow>  X h2' \<le> Y h'"
+    using eq99 unfolding emb_def by force
 
+  show "X \<le> (P -*q Y)"
+  proof (rule le_funI)
+    fix h
+    show "X h \<le> (P -*q Y) h"
+    proof (cases "(\<exists>h'.  P h' \<and> h ## h')")
+      case no_h': False
+      have " (P -*q Y) h = (INF h':{h'. h ## h' \<and> P h'}. Y (h + h'))"
+        unfolding sep_impl_q_alt by simp
+      also have "\<dots> = Inf {}" 
+        using no_h' by force
+      also have "\<dots> = \<infinity>"
+        by auto
+      finally show ?thesis by auto
+    next
+      case True
+      then have "X h = (INF h':{h'. P h' \<and> h ## h'}. X h)"
+        by(auto simp add: INF_constant)
+      also have "\<dots> \<le> (INF h':{h'. h ## h' \<and> P h'}. Y (h + h'))"
+        apply(rule INF_mono)  
+        using eq99' sep_disj_commute sep_add_commute by auto 
+      also have "\<dots> = (P -*q Y) h"
+        unfolding sep_impl_q_alt by simp
+      finally show ?thesis .
+    qed
+  qed 
+next
+  assume "X \<le> (P -*q Y)"
+  show "(X **q emb P) \<le> Y"
+    sorry
+qed
 
 subsubsection \<open>quantitative modus ponens\<close>
 
