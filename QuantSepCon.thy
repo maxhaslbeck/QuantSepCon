@@ -336,10 +336,8 @@ subsubsection \<open>monotonicity of **q\<close>
 text \<open>theorem 3.7\<close>
 
 lemma sep_conj_q_mono:
-  "X \<le> X' \<Longrightarrow> Y \<le> Y' \<Longrightarrow> (X **q Y) \<le> (X' **q Y')"
-  sorry
-
-
+   "X \<le> X' \<Longrightarrow> Y \<le> Y' \<Longrightarrow> (X **q Y) \<le> (X' **q Y')"  
+    by (force intro: le_funI SUP_mono simp add: sep_conj_q_alt mult_mono le_funD)  
 
 subsubsection \<open>adjointness of star and magicwand\<close>
 
