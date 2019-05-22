@@ -10,6 +10,15 @@ theory QuantSepCon
 begin
 
 
+text \<open>enable multiplication on functions\<close>
+
+instantiation "fun" :: (type,times) times
+begin
+definition [simp]: "(f1 * f2) x = f1 x * f2 x"
+instance by standard
+end 
+
+
 definition emb :: "('b \<Rightarrow> bool) \<Rightarrow> 'b  \<Rightarrow> ennreal" where
   "emb P x = (if P x then 1 else 0)"
 
@@ -218,10 +227,13 @@ lemmas sep_conj_q_c = star_comm sep_conj_q_left_commute
 
 
 subsubsection \<open>(Sub)distributivity Laws\<close>
+ 
+term "Q * (R::_\<Rightarrow>ennreal)"
 
 lemma theorem_3_6:
   "(P **q (sup Q R)) = sup (P **q Q) (P **q R)"
   "(P **q (Q + R)) \<le> (P **q Q) + (P **q R)"
+  "( (emb \<phi>) **q (Q * R)) \<le> ((emb \<phi>) **q Q) * ((emb \<phi>) **q R)"
 proof -
   have "\<And>f q x. sup f q x = sup (f x) (q x)" by simp
   have A: "\<And>a b :: ennreal. sup a b = Sup ({a} \<union> {b})"  
@@ -270,7 +282,79 @@ proof -
 
 next
   show "(P **q Q + R) \<le> (P **q Q) + (P **q R)" 
+  proof -
+
+    have brr: "\<And>S. \<And>f g::_\<Rightarrow>ennreal. (SUP x:S. f x + g x) \<le> (SUP x:S. f x) + (SUP x:S. g x)"
+      by (simp add: SUP_least SUP_upper add_mono)
+
+    have "\<And>a b c :: ennreal. a * (b + c) = a * b + a * c"
+      by (simp add: algebra_simps) 
+    have fff: "\<And>a b c d :: ennreal. a=c \<Longrightarrow> b=d \<Longrightarrow> a + b = c + d"
+      by (simp add: algebra_simps) 
+    { fix h
+      have "(P **q (Q + R)) h = Sup {P x * (Q + R) y |x y. h = x + y \<and> x ## y}"
+
+        unfolding sep_conj_q_def by simp
+      also have "\<dots> = Sup { (P x * Q y) + (P x * R y) |x y. h = x + y \<and> x ## y}"
+        unfolding plus_fun_def by(simp add: algebra_simps) 
+      also have "\<dots> = (SUP (x,y):{(x,y)|x y. h = x + y \<and> x ## y}. (P x * Q y) + (P x * R y) )"
+        apply(rule arg_cong[where f=Sup]) by auto  
+      also have "\<dots> = (SUP x:{(x,y)|x y. h = x + y \<and> x ## y}. (P (fst x) * Q (snd x)) + (P (fst x) * R (snd x)) )"
+        apply(rule arg_cong[where f=Sup]) by force    
+      also have "\<dots> \<le> (SUP x:{(x,y)|x y. h = x + y \<and> x ## y}. P (fst x) * Q (snd x) )
+                    + (SUP x:{(x,y)|x y. h = x + y \<and> x ## y}. P (fst x) * R (snd x) )" 
+        by (rule brr)
+          (*
+  also have "\<dots> = Sup { (P x * Q y) |x y. h = x + y \<and> x ## y} + Sup { P x * R y |x y. h = x + y \<and> x ## y}"
+    apply(rule fff)
+    subgoal apply(rule arg_cong[where f=Sup]) by force 
+    subgoal apply(rule arg_cong[where f=Sup]) by force    
+    done *)
+      also have "\<dots> = ((P **q Q) + (P **q R)) h"
+        unfolding sep_conj_q_alt apply simp     
+        by (metis (mono_tags, lifting) SUP_cong prod.case_eq_if)  
+      finally have "(P **q (Q + R)) h \<le> ((P **q Q) + (P **q R)) h " .
+    }
+
+    then show ?thesis by (rule le_funI)
+  qed
+next
+  show "( (emb \<phi>) **q (Q * R)) \<le> ((emb \<phi>) **q Q) * ((emb \<phi>) **q R)"
     sorry
 qed
+
+
+
+
+subsubsection \<open>monotonicity of **q\<close>
+
+text \<open>theorem 3.7\<close>
+
+lemma sep_conj_q_mono:
+  "X \<le> X' \<Longrightarrow> Y \<le> Y' \<Longrightarrow> (X **q Y) \<le> (X' **q Y')"
+  sorry
+
+
+
+subsubsection \<open>adjointness of star and magicwand\<close>
+
+text \<open>theorem 3.9\<close>
+
+lemma adjoint: "(X **q (emb P)) \<le> Y \<longleftrightarrow> X \<le> sep_impl_q P Y"
+  sorry
+
+
+subsubsection \<open>quantitative modus ponens\<close>
+
+text \<open>theorem 3.8\<close>
+
+lemma quant_modus_ponens:
+  "( (emb P) **q (sep_impl_q P X)) \<le> X"
+  sorry                  
+
+
+
+
+
 
 end
