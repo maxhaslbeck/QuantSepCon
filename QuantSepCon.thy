@@ -403,6 +403,10 @@ next
     sorry
 qed
 
+
+lemma adjoint_general: "(X **q P) \<le> Y \<longleftrightarrow> X \<le> (P -*qq Y)"
+  sorry
+
 subsubsection \<open>quantitative modus ponens\<close>
 
 text \<open>theorem 3.8\<close>
@@ -415,6 +419,10 @@ proof -
     using adjoint[symmetric, where X="(P -*q X)" and Y=X] by auto
   then show ?thesis using star_comm by auto
 qed
+
+lemma quant_modus_ponens_general:
+  "( P **q (P -*qq X)) \<le> X"
+  sorry
 
 
 subsection \<open>Intuitionistic Expectations\<close>
@@ -518,7 +526,7 @@ qed
 
 
 
-lemma
+lemma tightest_intuitionistic_expectations_wand:
     "intuitionistic_q (sep_true -*q X)" 
     "(sep_true -*q X) \<le> X"
     "\<And>X'. intuitionistic_q X' \<Longrightarrow> X' \<le> X \<Longrightarrow>  X' \<le> (sep_true -*q X)"
@@ -543,6 +551,12 @@ next
     sorry
 qed
 
+
+lemma tightest_intuitionistic_expectations_wand_general:
+    "intuitionistic_q (\<^bold>1 -*qq X)" 
+    "(\<^bold>1 -*qq X) \<le> X"
+    "\<And>X'. intuitionistic_q X' \<Longrightarrow> X' \<le> X \<Longrightarrow>  X' \<le> (\<^bold>1 -*qq X)"
+  sorry
 
 
 
