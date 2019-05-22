@@ -348,10 +348,10 @@ text \<open>theorem 3.9\<close>
 lemma adjoint: "(X **q (emb P)) \<le> Y \<longleftrightarrow> X \<le> (P -*q Y)"
 proof
   assume "(X **q emb P) \<le> Y"
-  with star_comm have *: "(emb P **q X) \<le> Y"
+  with star_comm have "(emb P **q X) \<le> Y"
     by auto
   then have "\<And>h'. (SUP (x, y):{(x, y) |x y. h' = x + y \<and> x ## y}. emb P x * X y)  \<le> Y h'"    
-    using * by (auto simp: le_fun_def sep_conj_q_SUP)
+    by (auto simp: le_fun_def sep_conj_q_SUP)
   then have eq99: "\<And>h' h1' h2'. h' = h1' + h2' \<and> h1' ## h2' \<Longrightarrow> emb P h1' * X h2' \<le> Y h'"
     by(auto simp add: Sup_le_iff)
   have eq99': "\<And>h' h1' h2'. h' = h1' + h2' \<and> h1' ## h2' \<and> P h1' \<Longrightarrow>  X h2' \<le> Y h'"
@@ -393,12 +393,12 @@ subsubsection \<open>quantitative modus ponens\<close>
 text \<open>theorem 3.8\<close>
 
 lemma quant_modus_ponens:
-  "( (emb P) **q (sep_impl_q P X)) \<le> X"
-  sorry                  
-
-
-
-
-
+  "( (emb P) **q (P -*q X)) \<le> X"
+proof -
+  have " (P -*q X) \<le> (P -*q X)" by simp
+  then have "(((P -*q X) **q emb P) \<le> X)"
+    using adjoint[symmetric, where X="(P -*q X)" and Y=X] by auto
+  then show ?thesis using star_comm by auto
+qed
 
 end
