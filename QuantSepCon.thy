@@ -331,7 +331,7 @@ qed
 
 
 
-subsubsection \<open>monotonicity of **q\<close>
+subsubsection \<open>monotonicity of @{term "( **q)"}\<close>
 
 text \<open>theorem 3.7\<close>
 
@@ -398,5 +398,139 @@ proof -
     using adjoint[symmetric, where X="(P -*q X)" and Y=X] by auto
   then show ?thesis using star_comm by auto
 qed
+
+
+subsection \<open>Intuitionistic Expectations\<close>
+
+text \<open>In SL, a predicate @{term \<phi>} is called @{term intuitionistic}, iff for all @{term h} and 
+ @{term h'} with @{term "h \<preceq> h'"} , @{term "\<phi> h"} implies @{term "\<phi> h'"}.\<close>
+
+term "intuitionistic"
+
+term "sep_true"
+
+definition "intuitionistic_q P = (\<forall>h h'. h \<preceq> h' \<longrightarrow> P h \<le> P h')"
+
+lemma "intuitionistic P \<Longrightarrow> intuitionistic_q (emb P)"
+  unfolding intuitionistic_q_def intuitionistic_def emb_def by auto
+
+
+lemma intuitionistic_qI:
+  "(\<And>h h'. h \<preceq> h' \<Longrightarrow> P h \<le> P h') \<Longrightarrow> intuitionistic_q P"
+  by (unfold intuitionistic_q_def, fast)
+
+lemma intuitionistic_qI2:
+  "(\<And>h h'. h ## h' \<Longrightarrow> P h \<le> P (h + h')) \<Longrightarrow> intuitionistic_q P"
+  apply (unfold intuitionistic_q_def sep_substate_def)
+  by auto
+
+ 
+
+lemma intuitionistic_qD:
+  "intuitionistic_q X \<Longrightarrow>  h ## z \<Longrightarrow> h' = h + z \<Longrightarrow> X h \<le> X h' "
+  by (unfold intuitionistic_q_def sep_substate_def, auto)
+
+
+lemma intuitionistic_q_is_attained_at_h: 
+  fixes
+    X :: "_ \<Rightarrow> ennreal"
+  assumes "intuitionistic_q X"
+  shows "(SUP (h1, h2):{(x, y) |x y. h = x + y \<and> x ## y}. X h1) = X h"
+  apply(rule antisym)
+  subgoal 
+    apply(rule SUP_least) using assms by(auto dest: intuitionistic_qD)
+  subgoal 
+      apply(rule SUP_upper2[where i="(h,0)"]) by auto
+  done
+ 
+text \<open>Tightest intuitionistic expectations\<close>
+
+abbreviation sep_true_q ("\<^bold>1")  where "\<^bold>1 \<equiv> (emb sep_true)"
+
+theorem tightest_intuitionistic_expectations_star:
+    "intuitionistic_q (X **q \<^bold>1)"
+    "X \<le> (X **q \<^bold>1)"
+    "\<And>X'. intuitionistic_q X' \<Longrightarrow> X \<le> X' \<Longrightarrow> (X **q \<^bold>1) \<le> X'"
+proof -
+  show "intuitionistic_q (X **q \<^bold>1)" 
+  proof (rule intuitionistic_qI2)
+    fix h h'
+    assume a: "h ## h'" 
+    have "(X **q \<^bold>1) h = (SUP (h1, h2):{(x, y). h = x + y \<and> x ## y}. X h1 * \<^bold>1 h2)" 
+      unfolding sep_conj_q_alt by simp
+    also have "\<dots> = (SUP (h1, h2):{(x, y). h = x + y \<and> x ## y}. X h1 * \<^bold>1 (h2+h'))"
+      by (auto simp: emb_def)
+    also have "\<dots> \<le> (SUP (h1, h2):{(x, y). h + h' = x + y \<and> x ## y}. X h1 * \<^bold>1 h2)"
+      apply(rule SUP_mono) apply auto
+      subgoal for h1 h2 apply(rule exI[where x=h1]) apply(rule exI[where x="h2 + h'"])  
+        using a by (force simp: sep_add_assoc dest: sep_add_disjD intro: sep_disj_addI3) 
+      done
+  also have "\<dots> = (X **q \<^bold>1) (h + h')" 
+      unfolding sep_conj_q_alt by simp
+    finally show "(X **q \<^bold>1) h \<le> (X **q \<^bold>1) (h + h')" .
+  qed
+next
+  show "X \<le> (X **q \<^bold>1)"
+  proof (rule le_funI)
+    fix h
+    have "X h \<le> (SUP (x, y):{(x, y) |x y. h = x + y \<and> x ## y}. X x * emb (\<lambda>s. True) y)"
+      apply(rule Sup_upper) apply auto 
+      apply(rule Set.image_eqI[where x="(h,0)"]) by (auto simp: emb_def)   
+    also have "\<dots> = (X **q \<^bold>1) h"
+      unfolding sep_conj_q_SUP by simp
+    finally show "X h \<le> (X **q \<^bold>1) h" .
+  qed
+next
+  fix X'
+  assume "intuitionistic_q X'" and Xmono: "X \<le> X'"
+  {
+    (* for arbitrary but fixed h *)
+    fix h
+    have "(X **q \<^bold>1) h \<le> (X' **q \<^bold>1) h"
+      using sep_conj_q_mono[OF Xmono] by(auto dest: le_funD)
+    also have "\<dots> = (SUP (x, y):{(x, y) |x y. h = x + y \<and> x ## y}. X' x *  \<^bold>1 y)"
+      unfolding sep_conj_q_SUP by simp
+    also have "\<dots> = (SUP (x, y):{(x, y) |x y. h = x + y \<and> x ## y}. X' x)"
+      by (auto simp add: emb_def)
+    also have "\<dots> = X' h" 
+      apply(rule intuitionistic_q_is_attained_at_h) by fact
+    finally have "(X **q \<^bold>1) h \<le> X' h" .
+  }
+  then show "(X **q \<^bold>1) \<le> X'" by (auto simp: le_fun_def)
+qed
+
+
+
+lemma
+    "intuitionistic_q (sep_true -*q X)" 
+    "(sep_true -*q X) \<le> X"
+    "\<And>X'. intuitionistic_q X' \<Longrightarrow> X' \<le> X \<Longrightarrow>  X' \<le> (sep_true -*q X)"
+proof -
+  {  
+    fix h h'
+    assume a: "h ## h'"
+    have "(sep_true -*q X) h \<le> (sep_true -*q X) (h + h')" 
+      sorry
+  } note * = this (* gives the lemma in the brackets a name *) 
+
+  show 1: "intuitionistic_q (sep_true -*q X)"
+    apply(rule intuitionistic_qI2)
+    by(rule *)
+next
+  show "(sep_true -*q X) \<le> X"
+    sorry
+next
+  fix X'
+  assume "intuitionistic_q X'" and Xmono: "X' \<le> X"
+  show "X' \<le> ((\<lambda>s. True) -*q X)"
+    sorry
+qed
+
+
+
+qed
+
+
+
 
 end
