@@ -23,6 +23,10 @@ definition emb :: "('b \<Rightarrow> bool) \<Rightarrow> 'b  \<Rightarrow> ennre
   "emb P x = (if P x then 1 else 0)"
 
 
+
+lemma emb_range: "emb P x \<in> {0,1}" unfolding emb_def by auto
+
+
 context sep_algebra
 begin
 
