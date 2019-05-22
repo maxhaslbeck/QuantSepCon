@@ -12,6 +12,9 @@ begin
 
 text \<open>enable multiplication on functions\<close>
 
+instance "fun" :: (type,zero) zero
+  by standard  
+
 instantiation "fun" :: (type,times) times
 begin
 definition [simp]: "(f1 * f2) x = f1 x * f2 x"
@@ -22,10 +25,7 @@ end
 definition emb :: "('b \<Rightarrow> bool) \<Rightarrow> 'b  \<Rightarrow> ennreal" where
   "emb P x = (if P x then 1 else 0)"
 
-
-
 lemma emb_range: "emb P x \<in> {0,1}" unfolding emb_def by auto
-
 
 context sep_algebra
 begin
@@ -119,6 +119,70 @@ lemma sep_impl_q_alt:
   apply (rule INF_cong)
    apply (auto simp:ennreal_div_one)
   done
+
+subsection \<open>Embedding of SL into QSL\<close>
+
+
+lemma Sup_zeroone: " P \<subseteq> {0,1} \<Longrightarrow> Sup P \<in> {0,1::ennreal}"
+(*  sledgehammer *)
+  by (smt Set.set_insert Sup_bot_conv(1) Sup_empty Sup_insert Sup_subset_mono Sup_upper bot_ennreal ccpo_Sup_singleton insertCI insert_commute insert_subset linorder_not_less order_le_less subset_insert)
+
+
+lemma Inf_zeroone: "P \<noteq> {} \<Longrightarrow> P \<subseteq> {0,1} \<Longrightarrow> Inf P \<in> {0,1::ennreal}"
+ (*  sledgehammer *)
+  by (smt Inf_le_Sup Inf_lower Inf_superset_mono Sup_empty Sup_subset_mono bot_ennreal cInf_singleton insertCI le_zero_eq linorder_not_less order_le_less subset_insert)
+ 
+
+
+lemma "(0::ennreal) \<le> 1"  by auto
+
+lemma emb_1: "emb P h = 1 \<longleftrightarrow> P h"
+  by(auto simp: emb_def)
+
+subsubsection \<open>Conservativity of QSL as an assertion language\<close>
+
+
+
+lemma sep_conj_q_range: "((emb P) **q (emb Q)) h \<in> {0,1}"
+  unfolding sep_conj_q_def  
+  apply(rule Sup_zeroone) 
+    by (auto simp: emb_def)
+   
+
+
+lemma sep_conj_q_leq1: "((emb P) **q (emb Q)) h \<le>1"
+  using sep_conj_q_range[of P Q h] by auto 
+
+lemma sep_impl_q_range: "(P -*q (emb Q)) h \<in> {0,1}"  
+  unfolding sep_impl_qq_def
+  apply(rule Inf_zeroone)
+  subgoal apply simp oops (* only holds for {0..1} instead of ennreal *)
+
+
+lemma "(P  \<longrightarrow>* Q) h \<longleftrightarrow> (P -*q (emb Q)) h = 1"
+  sorry
+
+
+
+lemma "(P ** Q) h \<longleftrightarrow> ((emb P) **q (emb Q)) h = 1" 
+proof -
+  have "(P ** Q) h = (\<exists>xa y. xa ## y \<and> h = xa + y \<and> emb P xa = 1 \<and> emb Q y = 1)"
+    unfolding sep_conj_def emb_1 by auto
+  also have "\<dots> = (Sup { emb P x * emb Q y | x y. h=x+y \<and> x ## y} = 1)"
+    apply rule
+    subgoal  
+      apply(rule antisym)
+      subgoal using sep_conj_q_leq1[unfolded sep_conj_q_def] by simp
+      subgoal apply(rule Sup_upper) by force 
+      done
+    subgoal  
+      sorry
+    done
+  also have "\<dots> = (((emb P) **q (emb Q)) h = 1)" unfolding sep_conj_q_def by simp
+  finally show ?thesis .
+qed
+
+ 
 
 
 subsection \<open>Properties of Quantitative Separating Connectives\<close> 
@@ -331,6 +395,16 @@ next
     sorry
 qed
 
+
+
+subsubsection \<open>Or\<close>
+
+lemma "emb (X or Y) = (max (emb X) (emb Y))" 
+  sorry
+
+
+lemma "((emb X) **q (emb Y)) = 0 \<Longrightarrow> emb (X or Y) = (emb X) + (emb Y)" 
+  sorry
 
 
 
@@ -695,6 +769,13 @@ lemma tightest_intuitionistic_expectations_wand_general:
     "(\<^bold>1 -*qq X) \<le> X"
     "\<And>X'. intuitionistic_q X' \<Longrightarrow> X' \<le> X \<Longrightarrow>  X' \<le> (\<^bold>1 -*qq X)"
   sorry
+
+
+
+abbreviation (input)
+  pred_ex_q :: "('b \<Rightarrow> 'a \<Rightarrow> ennreal) \<Rightarrow> 'a \<Rightarrow> ennreal" (binder "EXSq " 10) where
+  "EXSq x. P x \<equiv> \<lambda>h. SUP x. P x h"
+
 
 
 
