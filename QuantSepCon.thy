@@ -81,20 +81,6 @@ lemma "Sup (f ` S) = (SUP s:S. f s)"
 
 
 
-lemma sep_conj_q_impl1:
-  assumes P: "\<And>h. P h \<le> I h"
-  shows "(P **q R) h \<le> (I **q R) h"
-  unfolding sep_conj_q_alt
-  sorry
-
-
-
-lemma sep_conj_q_impl :
-  assumes P: "\<And>h. P h \<le> P' h"
-  assumes Q: "\<And>h. Q h \<le> Q' h"
-  shows "(P **q Q) h \<le> (P' **q Q') h"
-  sorry
-
 
 
 lemma sep_conj_q_SUP: "(P **q Q) = (\<lambda>h. (SUP i:{(x,y)| x y. h=x+y \<and> x ## y}. (\<lambda>(x,y). P x * Q y) i))"
@@ -339,6 +325,23 @@ lemma sep_conj_q_mono:
    "X \<le> X' \<Longrightarrow> Y \<le> Y' \<Longrightarrow> (X **q Y) \<le> (X' **q Y')"  
     by (force intro: le_funI SUP_mono simp add: sep_conj_q_alt mult_mono le_funD)  
 
+
+lemma sep_conj_q_impl1:
+  assumes P: "\<And>h. P h \<le> I h"
+  shows "(P **q R) h \<le> (I **q R) h" 
+  by (metis (no_types, lifting) assms le_funD le_fun_def star_comm_nice sup.absorb_iff2 theorem_3_6(1))  
+   (* crazy sledgehammer proof *)
+
+
+
+lemma sep_conj_q_impl :
+  assumes P: "\<And>h. P h \<le> P' h"
+  assumes Q: "\<And>h. Q h \<le> Q' h"
+  shows "(P **q Q) h \<le> (P' **q Q') h"
+  using sep_conj_q_mono  
+  by (simp add: P Q le_funD le_funI)  
+
+
 subsubsection \<open>adjointness of star and magicwand\<close>
 
 text \<open>theorem 3.9\<close>
@@ -524,10 +527,6 @@ next
   assume "intuitionistic_q X'" and Xmono: "X' \<le> X"
   show "X' \<le> ((\<lambda>s. True) -*q X)"
     sorry
-qed
-
-
-
 qed
 
 
