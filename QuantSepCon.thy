@@ -403,9 +403,44 @@ next
     sorry
 qed
 
+lemma adjoint_general': "(X **q P) \<le> Y \<longleftrightarrow> X \<le> (P -*qq Y)"
+  apply(auto simp:  le_INF_iff sep_impl_qq_def sep_conj_q_alt le_fun_def SUP_le_iff)
+  subgoal sorry
+  subgoal for a b apply(cases "0 < P b")
+    subgoal sorry
+    subgoal sorry
+    done
+  done
+
 
 lemma adjoint_general: "(X **q P) \<le> Y \<longleftrightarrow> X \<le> (P -*qq Y)"
-  sorry
+proof - 
+  have eq79: "\<And>h h'. h ## h' \<Longrightarrow> 0 < P h' \<Longrightarrow> ( X h \<le> Y (h + h') / P h') \<longleftrightarrow> X h * P h' \<le> Y(h+h') " sorry
+  thm eq79[where h'=0]
+  have "X \<le> (P -*qq Y) \<longleftrightarrow> (\<forall> h. X h \<le> (P -*qq Y) h)"
+    by (simp add: le_fun_def)
+  also have "... \<longleftrightarrow> (\<forall>h. X h \<le> (INF h':{h'. h ## h' \<and> 0 < P h'}. Y (h + h') / P h'))" 
+    unfolding sep_impl_qq_def
+    by simp
+  also have "... \<longleftrightarrow> (\<forall>h h'. h ## h' \<and> 0 < P h' \<longrightarrow> X h \<le> Y (h + h') / P h')" 
+    by (simp add: le_INF_iff)
+  also have "... \<longleftrightarrow>  (\<forall>h h'. h ## h' \<and> 0 < P h' \<longrightarrow> X h * P h' \<le> Y (h + h'))"
+    using eq79 by auto
+  also have "... \<longleftrightarrow> (\<forall>a b. a ## b \<longrightarrow> X a * P b \<le> Y (a + b))" 
+    apply auto
+    subgoal for a b
+      apply (cases "0 < P b")
+       apply simp
+      by auto
+    done
+  also have "... \<longleftrightarrow> ((\<lambda>h. SUP (x, y):{(x, y). h = x + y \<and> x ## y}. X x * P y) \<le> Y)" 
+    thm SUP_le_iff
+    by (simp add: le_fun_def SUP_le_iff)
+  also have "... \<longleftrightarrow> (X **q P) \<le> Y"
+    unfolding sep_conj_q_alt
+    by simp
+  finally show ?thesis by simp
+qed
 
 subsubsection \<open>quantitative modus ponens\<close>
 
