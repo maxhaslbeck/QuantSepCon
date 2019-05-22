@@ -412,26 +412,72 @@ lemma adjoint_general': "(X **q P) \<le> Y \<longleftrightarrow> X \<le> (P -*qq
     done
   done
 
+thm ereal_mult_divide
 
-lemma adjoint_general: "(X **q P) \<le> Y \<longleftrightarrow> X \<le> (P -*qq Y)"
+lemma ennreal_mult_divide: "b > 0 \<Longrightarrow> b < (\<infinity>::ennreal) \<Longrightarrow> b * (a / b) = a" 
+  apply(cases a; cases b) apply (auto simp: divide_ennreal ennreal_mult[symmetric])
+   by (simp add: ennreal_divide_eq_top_iff ennreal_mult_eq_top_iff)    
+
+lemma "(P::_\<Rightarrow>ennreal) h' * (Y (h + h') / P h') = FF \<Longrightarrow> G"
+  apply(subst (asm) ennreal_mult_divide) oops
+
+lemma nn: "(\<not> x < (top::ennreal)) = (x = top)" 
+  using top.not_eq_extremum by blast
+ 
+lemma "\<infinity> / (\<infinity>::ennreal) = 0"
+  by simp
+
+lemma "x / (\<infinity>::ennreal) = 0"
+  by simp
+
+lemma "x>0 \<Longrightarrow> x * (\<infinity>::ennreal) = \<infinity>" 
+  using ennreal_mult_eq_top_iff by auto
+
+lemma "0 * (\<infinity>::ennreal) = 0"
+  by auto
+
+
+lemma adjoint_general:
+  assumes "(\<And>h. P h < \<infinity>)"
+  shows "(X **q P) \<le> Y \<longleftrightarrow> X \<le> (P -*qq Y)"
 proof - 
-  have eq79: "\<And>h h'. h ## h' \<Longrightarrow> 0 < P h' \<Longrightarrow> ( X h \<le> Y (h + h') / P h') \<longleftrightarrow> X h * P h' \<le> Y(h+h') " sorry
+  have eq79: "\<And>h h'. h ## h' \<Longrightarrow> 0 < P h'  \<Longrightarrow> ( X h \<le> Y (h + h') / P h') \<longleftrightarrow> X h * P h' \<le> Y(h+h') "
+    subgoal for h h'
+      apply rule
+      subgoal using mult_left_mono[where a="X h" and b="Y (h + h') / P h'" and c="P h'"]
+        apply(cases "P h'<\<infinity>")
+        subgoal    
+          by (simp add: ennreal_mult_divide mult.commute)  
+        subgoal  
+          by (auto simp: nn ) 
+        done
+      subgoal
+        apply(cases "P h'<\<infinity>")
+        subgoal  
+          by (smt divide_less_ennreal ennreal_mult_divide infinity_ennreal_def less_le mult_left_mono not_less)
+        subgoal 
+          apply auto
+          apply(simp only: nn)
+          apply simp  (* oopsie \<forall>x. x/\<infinity> = 0 *)           
+          using assms nn by auto  
+        done
+      done 
+    done
   thm eq79[where h'=0]
   have "X \<le> (P -*qq Y) \<longleftrightarrow> (\<forall> h. X h \<le> (P -*qq Y) h)"
     by (simp add: le_fun_def)
-  also have "... \<longleftrightarrow> (\<forall>h. X h \<le> (INF h':{h'. h ## h' \<and> 0 < P h'}. Y (h + h') / P h'))" 
+  also have "... \<longleftrightarrow> (\<forall>h. X h \<le> (INF h':{h'. h ## h' \<and> 0 < P h' }. Y (h + h') / P h'))" 
     unfolding sep_impl_qq_def
-    by simp
-  also have "... \<longleftrightarrow> (\<forall>h h'. h ## h' \<and> 0 < P h' \<longrightarrow> X h \<le> Y (h + h') / P h')" 
+    by simp  
+  also have "... \<longleftrightarrow> (\<forall>h h'. h ## h' \<and> 0 < P h'   \<longrightarrow> X h \<le> Y (h + h') / P h')" 
     by (simp add: le_INF_iff)
-  also have "... \<longleftrightarrow>  (\<forall>h h'. h ## h' \<and> 0 < P h' \<longrightarrow> X h * P h' \<le> Y (h + h'))"
-    using eq79 by auto
+  also have "... \<longleftrightarrow>  (\<forall>h h'. h ## h' \<and> 0 < P h'  \<longrightarrow> X h * P h' \<le> Y (h + h'))"
+    using eq79 by simp
   also have "... \<longleftrightarrow> (\<forall>a b. a ## b \<longrightarrow> X a * P b \<le> Y (a + b))" 
     apply auto
     subgoal for a b
       apply (cases "0 < P b")
-       apply simp
-      by auto
+      by auto 
     done
   also have "... \<longleftrightarrow> ((\<lambda>h. SUP (x, y):{(x, y). h = x + y \<and> x ## y}. X x * P y) \<le> Y)" 
     thm SUP_le_iff
@@ -456,9 +502,14 @@ proof -
 qed
 
 lemma quant_modus_ponens_general:
-  "( P **q (P -*qq X)) \<le> X"
-  sorry
-
+  assumes "(\<And>h. P h < \<infinity>)"
+  shows "( P **q (P -*qq X)) \<le> X"
+proof -
+  have " (P -*qq X) \<le> (P -*qq X)" by simp
+  then have "(((P -*qq X) **q  P) \<le> X)"
+    using adjoint_general[symmetric, where X="(P -*qq X)" and Y=X] assms by auto
+  then show ?thesis using star_comm by auto
+qed 
 
 subsection \<open>Intuitionistic Expectations\<close>
 
