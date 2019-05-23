@@ -15,7 +15,7 @@ abbreviation embn ("\<lbrakk>~_\<rbrakk>") where "embn b \<equiv> (\<lambda>(s,h
 context sep_algebra
 begin
 
-subsection \<open> with state\<close>
+subsection \<open>With state\<close>
 
 definition
   sep_impl_s_q  (infixr "-\<star>" 60)
@@ -86,6 +86,11 @@ lemma sep_impl_s_q_mono:
   apply(rule sep_impl_q_mono[THEN le_funD]) 
   by (auto simp: le_fun_def emb_def) 
 
+term "a::'b::{times,complete_distrib_lattice,linear_continuum,semiring_1_no_zero_divisors}"
+
+
+print_classes
+
 lemma sep_conj_s_q_mono:
     "A \<le> B \<Longrightarrow> X \<le> Y \<Longrightarrow> sep_conj_s_q A X sh \<le> sep_conj_s_q B Y sh"
     unfolding sep_conj_s_q_def
@@ -100,6 +105,9 @@ subsubsection \<open>Algebraic Laws for * under purity\<close>
 
 definition pure_q :: "('b * 'a \<Rightarrow> ennreal) \<Rightarrow> bool" where
   "pure_q X \<longleftrightarrow> (\<forall>s h1 h2. X (s,h1) = X (s,h2))"
+
+lemma pure_qD: "\<And> s h1 h2. pure_q X \<Longrightarrow>  X (s, h1) = X (s, h2)" 
+  unfolding pure_q_def by auto
 
 lemma pure_q_const[simp]: "pure_q (\<lambda>s. x2)" 
   unfolding pure_q_def by auto
@@ -118,7 +126,13 @@ lemma  theorem_3_11_1:
   assumes "pure_q X"
   shows      
   "(\<lambda>sh. X sh * Y sh) \<le> (sep_conj_s_q X Y)"
-  sorry
+  unfolding sep_conj_s_q_def sep_conj_q_alt
+  apply(rule le_funI) apply auto
+  subgoal for s h 
+    apply(rule SUP_upper2[where i="(0,h)"])
+      using assms[THEN pure_qD] apply auto  
+      by (metis eq_iff) 
+    done
 
 
 lemma theorem_3_11_2:
@@ -156,7 +170,6 @@ lemma theorem_3_11_3':
       apply(subst sep_conj_s_q_commute)
       apply(simp add: theorem_3_11_3 assms) 
       apply(subst sep_conj_s_q_commute) by simp
-
 
 
 end
