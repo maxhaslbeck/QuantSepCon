@@ -78,13 +78,19 @@ lemma theorem_3_6_s:
   done
 
 
+lemma sep_impl_s_q_Rmono:
+    " X \<le> Y \<Longrightarrow> sep_impl_s_q A X sh \<le> sep_impl_s_q A Y sh" 
+  unfolding sep_impl_s_q_def
+  apply(cases sh) apply simp 
+  apply(rule sep_impl_q_monoR[THEN le_funD]) 
+  by (auto simp: le_fun_def emb_def)  
 
 lemma sep_impl_s_q_mono:
-    "B \<le> A \<Longrightarrow> X \<le> Y \<Longrightarrow> sep_impl_s_q A X sh \<le> sep_impl_s_q B Y sh"
+    "B \<le> A \<Longrightarrow> X \<le> Y \<Longrightarrow> sep_impl_s_q A X sh \<le> sep_impl_s_q B Y sh" 
   unfolding sep_impl_s_q_def
-  apply(cases sh) apply simp
+  apply(cases sh) apply simp oops (*
   apply(rule sep_impl_q_mono[THEN le_funD]) 
-  by (auto simp: le_fun_def emb_def) 
+  by (auto simp: le_fun_def emb_def) *)
 
 term "a::'b::{times,complete_distrib_lattice,linear_continuum,semiring_1_no_zero_divisors}"
 

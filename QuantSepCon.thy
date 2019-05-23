@@ -465,30 +465,48 @@ lemma ennreal_inverse_antimono:
    apply(simp add: inverse_ennreal)   
   using ennreal_neq_top top.extremum_uniqueI by blast   
 
+lemma NOTsep_impl_q_monoL: 
+  shows "~(\<forall>P' P Y. P' \<le> P \<longrightarrow> (P -*qq Y) \<le> (P' -*qq Y))"  
+proof -
+  let ?half = "(\<lambda>_. 1::ennreal)"
+  let ?one = "(\<lambda>_. \<infinity>::ennreal)"
+  have "?half \<le> ?one" by (auto simp: le_fun_def)  
+  have "  (?one -*qq ?one) <= (?half -*qq ?one)"
+    unfolding sep_impl_qq_def apply (auto simp add: le_fun_def INF_constant)
+    oops 
+    
+
 lemma sep_impl_q_monoL: 
   shows "P' \<le> P \<Longrightarrow> (P -*qq Y) \<le> (P' -*qq Y)"  
-(*  unfolding sep_impl_qq_def
+  unfolding sep_impl_qq_def
   apply(rule le_funI)
-  apply(rule Inf_mono)
-  apply auto
-  subgoal for h h' apply(rule exI[where x=h']) 
-    apply (auto) apply(drule le_funD[where x=h']) apply simp
-    apply(cases "P h'<\<infinity>")
-    subgoal apply auto apply(drule le_funD[where x=h']) 
-      apply(drule ennreal_inverse_antimono) 
-      unfolding divide_ennreal_def 
-      using mult_left_mono by fastforce 
-    subgoal by (auto simp: nn)
-    done
-  done
-*) oops
+  apply(rule INF_mono) apply auto oops
+
+lemma sep_impl_q_monoL: 
+  shows "P' \<le> P \<Longrightarrow> (P -*qq Y) \<le> (P' -*qq Y)"  
+  unfolding sep_impl_qq_def
+  apply(rule le_funI)
+  apply(rule INF_mono)   
+  
+  subgoal for  h h'  
+    apply(rule bexI[where x=h']) 
+    subgoal    
+      apply(drule le_funD[where x=h']) apply auto
+      subgoal apply(drule ennreal_inverse_antimono) unfolding divide_ennreal_def 
+        using mult_left_mono by fastforce
+      subgoal apply(drule ennreal_inverse_antimono) unfolding divide_ennreal_def 
+        using mult_left_mono by fastforce   
+      done
+    subgoal   apply(drule le_funD[where x=h'])  apply auto  apply (auto simp: nn)
+      oops
+
 
 lemma sep_impl_q_mono: 
   shows "P' \<le> P \<Longrightarrow> Y \<le> Y' \<Longrightarrow> (P -*qq Y) \<le> (P' -*qq Y')"  
   apply(rule order.trans)
-  apply(rule sep_impl_q_monoL) apply simp
-  apply(rule sep_impl_q_monoR) apply simp
-  oops
+  apply(rule sep_impl_q_monoR) apply simp oops
+ (* apply(rule sep_impl_q_monoL) apply simp *)
+  
 
 subsubsection \<open>adjointness of star and magicwand\<close>
 
@@ -632,12 +650,11 @@ proof -
 qed
 
 lemma quant_modus_ponens_general:
-  assumes "(\<And>h. P h < \<infinity>)"
   shows "( P **q (P -*qq X)) \<le> X"
 proof -
   have " (P -*qq X) \<le> (P -*qq X)" by simp
   then have "(((P -*qq X) **q  P) \<le> X)"
-    using adjoint_general[symmetric, where X="(P -*qq X)" and Y=X] assms by auto
+    using adjoint_general[symmetric, where X="(P -*qq X)" and Y=X]  by auto
   then show ?thesis using star_comm by auto
 qed 
 
