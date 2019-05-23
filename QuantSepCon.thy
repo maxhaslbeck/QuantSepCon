@@ -98,7 +98,7 @@ subsection \<open>Quantitative Separating Implication - Magic Wand\<close>
 definition
   sep_impl_qq :: "('a \<Rightarrow> ennreal) \<Rightarrow> ('a \<Rightarrow> ennreal) \<Rightarrow> ('a \<Rightarrow> ennreal)" (infixr "-*qq" 35)
   where
-  "P -*qq Q \<equiv> \<lambda>h. INF h': { h'. h ## h' \<and> P(h') > 0}. Q (h + h') / P(h')"
+  "P -*qq Q \<equiv> \<lambda>h. INF h': { h'. h ## h' \<and> P(h') > 0 \<and> (P h' < \<infinity> \<or> Q (h+h') < \<infinity>)}. Q (h + h') / P(h')"
 
 (*definition
   sep_impl_q :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> ennreal) \<Rightarrow> ('a \<Rightarrow> ennreal)" (infixr "-*q" 35)
@@ -434,7 +434,11 @@ lemma sep_conj_q_impl :
 
 
 subsubsection \<open>is @{term "(-*qq)"} monotonic\<close>
- 
+
+
+lemma nn: "(\<not> x < (top::ennreal)) = (x = top)" 
+  using top.not_eq_extremum by blast
+
 lemma sep_impl_q_monoR: 
   shows "Y \<le> Y' \<Longrightarrow> (P -*qq Y) \<le> (P -*qq Y')"  
   unfolding sep_impl_qq_def
@@ -443,11 +447,13 @@ lemma sep_impl_q_monoR:
   apply auto
   subgoal for h h' apply(rule exI[where x=h']) 
     apply auto  
-    by (simp add: divide_right_mono_ennreal le_funD)   
+    by (simp add: divide_right_mono_ennreal le_funD)
+  subgoal for h h' apply(rule exI[where x=h']) 
+    apply auto  
+     apply (auto simp add: nn divide_right_mono_ennreal le_funD)   
+    
+    by (metis le_funD not_less) 
   done
-
-lemma nn: "(\<not> x < (top::ennreal)) = (x = top)" 
-  using top.not_eq_extremum by blast
 
 
 lemma "(a::ennreal) div b = a / b" by auto
@@ -461,7 +467,7 @@ lemma ennreal_inverse_antimono:
 
 lemma sep_impl_q_monoL: 
   shows "P' \<le> P \<Longrightarrow> (P -*qq Y) \<le> (P' -*qq Y)"  
-  unfolding sep_impl_qq_def
+(*  unfolding sep_impl_qq_def
   apply(rule le_funI)
   apply(rule Inf_mono)
   apply auto
@@ -475,14 +481,14 @@ lemma sep_impl_q_monoL:
     subgoal by (auto simp: nn)
     done
   done
-
+*) oops
 
 lemma sep_impl_q_mono: 
   shows "P' \<le> P \<Longrightarrow> Y \<le> Y' \<Longrightarrow> (P -*qq Y) \<le> (P' -*qq Y')"  
   apply(rule order.trans)
   apply(rule sep_impl_q_monoL) apply simp
-  apply(rule sep_impl_q_monoR) by simp
-
+  apply(rule sep_impl_q_monoR) apply simp
+  oops
 
 subsubsection \<open>adjointness of star and magicwand\<close>
 
@@ -531,14 +537,6 @@ next
     sorry
 qed
 
-lemma adjoint_general': "(X **q P) \<le> Y \<longleftrightarrow> X \<le> (P -*qq Y)"
-  apply(auto simp:  le_INF_iff sep_impl_qq_def sep_conj_q_alt le_fun_def SUP_le_iff)
-  subgoal sorry
-  subgoal for a b apply(cases "0 < P b")
-    subgoal sorry
-    subgoal sorry
-    done
-  done
 
 thm ereal_mult_divide
 
@@ -564,10 +562,9 @@ lemma "0 * (\<infinity>::ennreal) = 0"
 
 
 lemma adjoint_general:
-  assumes "(\<And>h. P h < \<infinity>)"
   shows "(X **q P) \<le> Y \<longleftrightarrow> X \<le> (P -*qq Y)"
 proof - 
-  have eq79: "\<And>h h'. h ## h' \<Longrightarrow> 0 < P h'  \<Longrightarrow> ( X h \<le> Y (h + h') / P h') \<longleftrightarrow> X h * P h' \<le> Y(h+h') "
+  have eq79: "\<And>h h'. h ## h' \<Longrightarrow> 0 < P h'  \<Longrightarrow> (P h' < \<infinity> \<or> Y (h+h') < \<infinity>) \<Longrightarrow> ( X h \<le> Y (h + h') / P h') \<longleftrightarrow> X h * P h' \<le> Y(h+h') "
     subgoal for h h'
       apply rule
       subgoal using mult_left_mono[where a="X h" and b="Y (h + h') / P h'" and c="P h'"]
@@ -585,26 +582,33 @@ proof -
           apply auto
           apply(simp only: nn)
           apply simp  (* oopsie \<forall>x. x/\<infinity> = 0 *)           
-          using assms nn by auto  
+          using  nn 
+          by (metis ennreal_mult_eq_top_iff linorder_not_less)      
         done
       done 
     done
   thm eq79[where h'=0]
   have "X \<le> (P -*qq Y) \<longleftrightarrow> (\<forall> h. X h \<le> (P -*qq Y) h)"
     by (simp add: le_fun_def)
-  also have "... \<longleftrightarrow> (\<forall>h. X h \<le> (INF h':{h'. h ## h' \<and> 0 < P h' }. Y (h + h') / P h'))" 
+  also have "... \<longleftrightarrow> (\<forall>h. X h \<le> (INF h':{h'. h ## h' \<and> 0 < P h'\<and> (P h' < \<infinity> \<or> Y (h+h') < \<infinity>) }. Y (h + h') / P h'))" 
     unfolding sep_impl_qq_def
     by simp  
-  also have "... \<longleftrightarrow> (\<forall>h h'. h ## h' \<and> 0 < P h'   \<longrightarrow> X h \<le> Y (h + h') / P h')" 
+  also have "... \<longleftrightarrow> (\<forall>h h'. h ## h' \<and> 0 < P h' \<and> (P h' < \<infinity> \<or> Y (h+h') < \<infinity>)  \<longrightarrow> X h \<le> Y (h + h') / P h')" 
     by (simp add: le_INF_iff)
-  also have "... \<longleftrightarrow>  (\<forall>h h'. h ## h' \<and> 0 < P h'  \<longrightarrow> X h * P h' \<le> Y (h + h'))"
-    using eq79 by simp
+  also have "... \<longleftrightarrow>  (\<forall>h h'. h ## h' \<and> 0 < P h' \<and> (P h' < \<infinity> \<or> Y (h+h') < \<infinity>)  \<longrightarrow> X h * P h' \<le> Y (h + h'))"
+    using eq79 by auto
   also have "... \<longleftrightarrow> (\<forall>a b. a ## b \<longrightarrow> X a * P b \<le> Y (a + b))" 
     apply auto
     subgoal for a b
       apply (cases "0 < P b")
-      by auto 
-    done
+      subgoal
+        apply( cases "P b < \<infinity>"; cases "Y (a+b) < \<infinity>")
+           apply (auto simp: nn) by force
+        subgoal
+        apply( cases "P b < \<infinity>"; cases "Y (a+b) < \<infinity>")
+           by (auto simp: nn)
+         done
+       done
   also have "... \<longleftrightarrow> ((\<lambda>h. SUP (x, y):{(x, y). h = x + y \<and> x ## y}. X x * P y) \<le> Y)" 
     thm SUP_le_iff
     by (simp add: le_fun_def SUP_le_iff)
