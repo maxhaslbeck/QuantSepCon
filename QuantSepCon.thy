@@ -10,6 +10,18 @@ theory QuantSepCon
 begin
 
 
+
+
+subsection \<open>Stuff about SUP and various operations\<close>
+
+
+
+
+lemma SUP_plus_subdistrib:
+  "(SUP (h1,h2):A.  f h1 h2 + g h1 h2 :: ennreal) \<le> (SUP (h1,h2):A.  f h1 h2) + (SUP (h1,h2):A.  g h1 h2)"
+  sorry
+
+
 text \<open>enable multiplication on functions\<close>
 
 instance "fun" :: (type,zero) zero
@@ -249,7 +261,7 @@ proof (rule ext)
   also have "\<dots> = (SUP xa:{(h1, h2, h3). h = h1 + h2 + h3 \<and> h1 ## h2 + h3 \<and> h1 ## h2 \<and> h1 ## h3 \<and> h3 ## h2 }. case xa of (h1, h2, h3) \<Rightarrow> x h1 * y h2 * z h3)"
     apply(subst SUP_UNION[symmetric]) 
     apply(rule SUP_cong)
-    subgoal apply (auto simp: sep_add_assoc sep_conj_assoc sep_disj_commute dest: sep_disj_addD )
+    subgoal apply (auto simp: sep_add_ac dest: sep_disj_addD  )
       subgoal  
         by (metis  sep_add_assoc  sep_disj_addD1  sep_disj_addD2) 
       done
@@ -257,7 +269,7 @@ proof (rule ext)
   also have "\<dots> = (SUP xa:{(x, y). h = x + y \<and> x ## y}. SUP i:{(h1,h2, snd xa)| h1 h2 . fst xa = h1 + h2 \<and> h1 ## h2}. (case i of (h1, h2, h3) \<Rightarrow> x h1 * y h2 * z h3))"
     apply(subst SUP_UNION[symmetric]) 
     apply(rule SUP_cong)
-    subgoal apply (auto simp: sep_add_assoc sep_conj_assoc sep_disj_commute dest: sep_disj_addD )
+    subgoal apply (auto simp: sep_add_ac dest: sep_disj_addD )
       subgoal   
         using  sep_disj_addI1  sep_disj_commuteI by blast   
       subgoal   
@@ -305,7 +317,7 @@ lemma star_comm_nice: "(X **q Y) = (Y **q X)"
   unfolding sep_conj_q_SUP
   apply(rule ext)
   apply(rule Sup_cong)
-  apply (auto simp add: mult.commute sep_disj_commute sep_add_commute)
+  apply (auto simp add: mult.commute sep_add_ac)
   done
 
 
@@ -601,7 +613,7 @@ proof -
         by(auto simp add: INF_constant)
       also have "\<dots> \<le> (INF h':{h'. h ## h' \<and> P h'}. Y (h + h'))"
         apply(rule INF_mono)  
-        using eq99' sep_disj_commute sep_add_commute by auto 
+        using eq99' by (auto simp: sep_add_ac) 
       also have "\<dots> = (P -*q Y) h"
         unfolding sep_impl_q_alt by simp
       finally show ?thesis .
@@ -899,9 +911,51 @@ abbreviation (input)
   "EXSq x. P x \<equiv> \<lambda>h. SUP x. P x h"
 
 
-
-
 end
 
+
+subsection \<open>Introduce sized separation algebras\<close>
+
+print_classes
+term size
+term Size
+class sized = 
+  fixes Size :: "'a \<Rightarrow> ennreal"
+
+
+class normed_sep_algebra = sep_algebra  + sized  +
+  assumes  size0: "Size 0 = 0" 
+    and sizeadd_triangle: "Size (h1+h2) \<le> Size h1 + Size h2"
+    and sizeadd: "h1 ## h2 \<Longrightarrow> Size (h1+h2) = Size h1 + Size h2"
+begin
+ 
+text \<open>Heap Size Law #3:\<close>
+
+lemma heap_size_law_3: "(X **q Y) * Size \<le> ((X * Size) **q Y) + ((Y * Size) **q X) "
+proof (rule le_funI)
+  fix h 
+  have "((X **q Y) * Size) h = (SUP x:{(x, y). h = x + y \<and> x ## y}. case x of (x, y) \<Rightarrow> X x * Y y) * Size h"
+    unfolding sep_conj_q_alt by simp
+  also have "\<dots> = (SUP x:{(x, y). h = x + y \<and> x ## y}. (case x of (x, y) \<Rightarrow> X x * Y y) *  Size h)" 
+    by (simp add: SUP_mult_right_ennreal) 
+  also have "\<dots> = (SUP (h1,h2):{(x, y). h = x + y \<and> x ## y}.  (X h1 * Y h2 * Size h1) + X h1 * Y h2 *  Size h2)" 
+    apply(rule SUP_cong) by(auto simp: sizeadd distrib_left) 
+  also have "\<dots> \<le> (SUP (h1, h2):{(x, y). h = x + y \<and> x ## y}. X h1 * Y h2 * Size h1) +
+    (SUP (h1, h2):{(x, y). h = x + y \<and> x ## y}. X h1 * Y h2 * Size h2)" (is "_ \<le> ?L + ?R")
+    by (rule SUP_plus_subdistrib)
+  also 
+  have L: "?L = (SUP (x, y):{(x, y). h = x + y \<and> x ## y}. X x * Size x * Y y)"
+    apply (rule SUP_cong) by (auto simp: mult_ac) 
+  have R: "?R = (SUP (x, y):{(x, y). h = x + y \<and> x ## y}. Y x * Size x * X y)"
+    apply (rule Sup_cong) by (auto simp: sep_add_ac mult_ac)  
+  have "?L + ?R = (SUP (x, y):{(x, y). h = x + y \<and> x ## y}. X x * Size x * Y y) 
+                      + (SUP (x, y):{(x, y). h = x + y \<and> x ## y}. Y x * Size x * X y)"  
+    by(simp only: L R) 
+  also have "\<dots> = (((X * Size) **q Y) + ((Y * Size) **q X)) h"
+    unfolding sep_conj_q_alt plus_fun_def times_fun_def by auto 
+  finally show "((X **q Y) * Size) h \<le> ((X * Size **q Y) + (Y * Size **q X)) h " .
+qed
+
+end
 
 end
