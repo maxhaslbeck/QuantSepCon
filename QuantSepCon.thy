@@ -153,14 +153,14 @@ lemma sep_conj_q_range: "((emb P) **q (emb Q)) h \<in> {0,1}"
 lemma sep_conj_q_leq1: "((emb P) **q (emb Q)) h \<le>1"
   using sep_conj_q_range[of P Q h] by auto 
 
-lemma sep_impl_q_range: "(P -*q (emb Q)) h \<in> {0,1}"  
-  unfolding sep_impl_qq_def
+lemma sep_impl_q_range: "inf 1 ((P -*q (emb Q)) h) \<in> {0,1}"  
+  unfolding sep_impl_qq_def oops (*
   apply(rule Inf_zeroone)
-  subgoal apply simp oops (* only holds for {0..1} instead of ennreal *)
+  subgoal apply simp oops  only holds for {0..1} instead of ennreal *)
 
-(* only holds for {0..1} instead of ennreal ! 
-lemma "(P  \<longrightarrow>* Q)  =  (\<lambda>x. (P -*q (emb Q)) x  = 1)"
-  apply(rule ext)
+
+lemma "(P  \<longrightarrow>* Q) h  \<longleftrightarrow> inf 1 ((P -*q (emb Q)) h)  = 1"
+  sorry  (*
 proof -
   fix h
   have " (P -*q (emb Q)) h = 1 \<longleftrightarrow> ((INF h':{h'. h ## h' \<and> P h'}. emb Q (h + h')) = 1)"
@@ -483,8 +483,7 @@ lemma sep_impl_q_monoR:
     by (simp add: divide_right_mono_ennreal le_funD)
   subgoal for h h' apply(rule exI[where x=h']) 
     apply auto  
-     apply (auto simp add: nn divide_right_mono_ennreal le_funD)   
-    
+     apply (auto simp add: nn divide_right_mono_ennreal le_funD)       
     by (metis le_funD not_less) 
   done
 
@@ -519,7 +518,7 @@ lemma sep_impl_q_monoL:
   shows "P' \<le> P \<Longrightarrow> (P -*qq Y) \<le> (P' -*qq Y)"  
   unfolding sep_impl_qq_def
   apply(rule le_funI)
-  apply(rule INF_mono)   
+  apply(rule INF_mono)   (* TODO: I think one looses here already ! *)
   
   subgoal for  h h'  
     apply(rule bexI[where x=h']) 
@@ -531,7 +530,7 @@ lemma sep_impl_q_monoL:
         using mult_left_mono by fastforce   
       done
     subgoal   apply(drule le_funD[where x=h'])  apply auto  apply (auto simp: nn)
-      oops
+      oops 
 
 
 lemma sep_impl_q_mono: 
@@ -800,8 +799,11 @@ proof -
   {  
     fix h h'
     assume a: "h ## h'"
-    have "(sep_true -*q X) h \<le> (sep_true -*q X) (h + h')" 
+    have "(sep_true -*q X) h \<le> G" 
       sorry
+    also have "\<dots> \<le> (sep_true -*q X) (h + h')" 
+      sorry
+    finally have "(sep_true -*q X) h \<le> (sep_true -*q X) (h + h')" .
   } note * = this (* gives the lemma in the brackets a name *) 
 
   show 1: "intuitionistic_q (sep_true -*q X)"

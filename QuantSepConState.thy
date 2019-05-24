@@ -152,7 +152,7 @@ lemma theorem_3_11_2:
 
 lemma theorem_3_11_3:
   assumes "pure_q X" 
-  shows "(sep_conj_s_q (\<lambda>sh. X sh * Y sh) Z) = (\<lambda>sh. X sh * (sep_conj_s_q Y Z) sh)"
+  shows "((\<lambda>sh. X sh * Y sh) \<star> Z) = (\<lambda>sh. X sh * (Y \<star> Z) sh)"
 proof -
   {
     fix s h 
