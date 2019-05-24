@@ -153,29 +153,51 @@ lemma sep_conj_q_range: "((emb P) **q (emb Q)) h \<in> {0,1}"
 lemma sep_conj_q_leq1: "((emb P) **q (emb Q)) h \<le>1"
   using sep_conj_q_range[of P Q h] by auto 
 
+lemma sep_impl_q_rangezeroonetop: "((P -*q (emb Q)) h) \<in> {0,1,top}"  
+  unfolding sep_impl_qq_def 
+  apply(cases "{h'. h ## h' \<and> 0 < emb P h' \<and> (emb P h' < \<infinity> \<or> emb Q (h + h') < \<infinity>)} = {}")
+  subgoal
+    by auto
+  subgoal apply(rule subsetD[where A="{0,1}"])
+    apply simp
+    apply(rule Inf_zeroone)
+    subgoal by auto
+    by(auto simp: emb_def split: if_splits)
+  done
+
 lemma sep_impl_q_range: "inf 1 ((P -*q (emb Q)) h) \<in> {0,1}"  
-  unfolding sep_impl_qq_def oops (*
-  apply(rule Inf_zeroone)
-  subgoal apply simp oops  only holds for {0..1} instead of ennreal *)
+  using sep_impl_q_rangezeroonetop
+  by (smt inf.absorb2 inf.orderE inf_eq_top_iff insert_iff linorder_not_less order_le_less)  
+
+lemma "{h'. h ## h' \<and> P h'} \<noteq> {} \<Longrightarrow>
+      (INF h':{h'. h ## h' \<and> P h'}. emb Q (h + h')) \<in> {0,1}"
+  oops
 
 
 lemma "(P  \<longrightarrow>* Q) h  \<longleftrightarrow> inf 1 ((P -*q (emb Q)) h)  = 1"
-  sorry  (*
-proof -
+proof - 
+  (* rather ugly proof, DB's fault ;) *)
   fix h
-  have " (P -*q (emb Q)) h = 1 \<longleftrightarrow> ((INF h':{h'. h ## h' \<and> P h'}. emb Q (h + h')) = 1)"
+  have " inf 1 ((P -*q (emb Q)) h) = 1 \<longleftrightarrow> inf 1 ((INF h':{h'. h ## h' \<and> P h'}. emb Q (h + h'))) = 1"
     unfolding sep_impl_q_alt by simp 
   also have "\<dots> \<longleftrightarrow> (\<forall>h'. h ## h' \<and> P h' \<longrightarrow> Q (h + h'))"
     apply(rule antisym)
-    subgoal apply auto sorry
-    subgoal apply auto apply (auto simp: emb_def INF_constant)
-             
-      sorry
+    subgoal apply auto
+      apply(cases "{h'. h ## h' \<and> P h'} = {}")
+      subgoal by simp
+      subgoal for h' apply auto proof (rule ccontr, goal_cases)
+        case (1 x)
+        from 1(2-6) have "inf 1 (INF h':{h'. h ## h' \<and> P h'}. emb Q (h + h')) \<le> 0" 
+          apply(intro le_infI2)
+          apply(intro INF_lower2[where i=h']) apply simp by (simp add: emb_def)
+        then show ?case using 1(1) by auto
+      qed 
+      done
+    subgoal   by (auto simp: emb_def INF_constant) 
     done
   also have "\<dots> \<longleftrightarrow> (P  \<longrightarrow>* Q) h" unfolding sep_impl_def by auto
-  finally show "(P  \<longrightarrow>* Q) h \<longleftrightarrow> (P -*q (emb Q)) h = 1" by simp
-qed
-*)
+  finally show "(P  \<longrightarrow>* Q) h \<longleftrightarrow> inf 1 ((P -*q (emb Q)) h) = 1" by simp
+qed 
 
 lemma star_conservative: "(P ** Q) h \<longleftrightarrow> ((emb P) **q (emb Q)) h = 1" 
 proof -
@@ -488,6 +510,10 @@ lemma sep_impl_q_monoR:
   done
 
 
+lemma sep_impl_q_monoR': 
+  shows "Y \<le> Y' \<Longrightarrow> (P -*qq Y) h \<le> (P -*qq Y') h"  
+  using sep_impl_q_monoR le_fun_def by fast
+
 lemma "(a::ennreal) div b = a / b" by auto
   
 lemma ennreal_inverse_antimono:
@@ -791,42 +817,82 @@ qed
 
 
 
-lemma tightest_intuitionistic_expectations_wand:
-    "intuitionistic_q (sep_true -*q X)" 
-    "(sep_true -*q X) \<le> X"
-    "\<And>X'. intuitionistic_q X' \<Longrightarrow> X' \<le> X \<Longrightarrow>  X' \<le> (sep_true -*q X)"
-proof -
-  {  
-    fix h h'
-    assume a: "h ## h'"
-    have "(sep_true -*q X) h \<le> G" 
-      sorry
-    also have "\<dots> \<le> (sep_true -*q X) (h + h')" 
-      sorry
-    finally have "(sep_true -*q X) h \<le> (sep_true -*q X) (h + h')" .
-  } note * = this (* gives the lemma in the brackets a name *) 
-
-  show 1: "intuitionistic_q (sep_true -*q X)"
-    apply(rule intuitionistic_qI2)
-    by(rule *)
-next
-  show "(sep_true -*q X) \<le> X"
-    sorry
-next
-  fix X'
-  assume "intuitionistic_q X'" and Xmono: "X' \<le> X"
-  show "X' \<le> ((\<lambda>s. True) -*q X)"
-    sorry
-qed
+lemma intuitionistic_q_is_attained_at_h_wand: 
+  fixes
+    X :: "_ \<Rightarrow> ennreal"
+  assumes "intuitionistic_q X"
+  shows "X h = (INF h':{h'. h ## h' }. X (h + h') )"
+  apply(rule antisym)
+  subgoal 
+    apply(rule Inf_greatest) using assms by(auto dest: intuitionistic_qD)
+  subgoal 
+      apply(rule INF_lower2[where i=0])  by auto
+  done
 
 
 lemma tightest_intuitionistic_expectations_wand_general:
     "intuitionistic_q (\<^bold>1 -*qq X)" 
     "(\<^bold>1 -*qq X) \<le> X"
     "\<And>X'. intuitionistic_q X' \<Longrightarrow> X' \<le> X \<Longrightarrow>  X' \<le> (\<^bold>1 -*qq X)"
-  sorry
+proof -
+  {  
+    fix h h'
+    assume a: "h ## h'"
+    have "(\<^bold>1 -*qq X) h = (INF h':{h'. h ## h' \<and> 0 < emb (\<lambda>s. True) h' \<and> (emb (\<lambda>s. True) h' < \<infinity> \<or> X (h + h') < \<infinity>)}.
+        X (h + h') / emb (\<lambda>s. True) h')" 
+      unfolding sep_impl_qq_def  by simp
+    also have "\<dots> \<le> (INF h'a:{h'a. h + h' ## h'a \<and> 0 < emb (\<lambda>s. True) h'a \<and> (emb (\<lambda>s. True) h'a < \<infinity> \<or> X (h + h' + h'a) < \<infinity>)}.
+        X (h + h' + h'a) / emb (\<lambda>s. True) h'a)" 
+      apply(rule INF_mono)
+      subgoal for h'' apply(rule bexI[where x="h' + h''"])
+        using a by (auto simp: sep_disj_addI3 emb_def sep_add_assoc dest: sep_add_disjD)
+      done
+    also have "\<dots> = (\<^bold>1 -*qq X) (h + h')" 
+      unfolding sep_impl_qq_def  by simp
+    finally have "(\<^bold>1 -*qq X) h \<le> (\<^bold>1 -*qq X) (h + h')" .
+  } note * = this (* gives the lemma in the brackets a name *) 
+
+  show 1: "intuitionistic_q (\<^bold>1 -*qq X)"
+    apply(rule intuitionistic_qI2)
+    by(rule *)
+next
+  show "(\<^bold>1 -*qq X) \<le> X"
+  proof (rule le_funI)
+    fix h
+    have "(\<^bold>1 -*qq X) h = (INF h':{h'. h ## h' \<and> 0 < emb (\<lambda>s. True) h' \<and> (emb (\<lambda>s. True) h' < \<infinity> \<or> X (h + h') < \<infinity>)}.
+        X (h + h') / emb (\<lambda>s. True) h')"
+      unfolding sep_impl_qq_def by simp   
+    also have "\<dots> \<le> X h"
+      apply(rule INF_lower2[where i=0]) by (auto simp: emb_def ennreal_div_one)  
+    finally show "(\<^bold>1 -*qq X) h \<le> X h" .
+  qed
+next
+  fix X'
+  assume "intuitionistic_q X'" and Xmono: "X' \<le> X"
+  {    
+    fix h (* for arbitrary but fixed h *)
+    have "X' h = (INF h':{h'. h ## h' }. X' (h + h') )"
+      apply(rule intuitionistic_q_is_attained_at_h_wand) by fact
+    also have "\<dots> = (INF h':{h'. h ## h' \<and> 0 < emb (\<lambda>s. True) h' \<and> (emb (\<lambda>s. True) h' < \<infinity> \<or> X' (h + h') < \<infinity>)}.
+        X' (h + h') / emb (\<lambda>s. True) h')"
+      by (auto simp: emb_def ennreal_div_one)  
+    also have "\<dots> = (\<^bold>1 -*qq X') h"
+      unfolding sep_impl_qq_def by simp
+    also have "\<dots> \<le> (\<^bold>1 -*qq X) h" 
+      apply(rule sep_impl_q_monoR') by fact
+    finally have "X' h \<le> (\<^bold>1 -*qq X) h" .
+  }
+  then show "X' \<le> (\<^bold>1 -*qq X)" by(auto intro: le_funI)
+qed
 
 
+
+
+lemma tightest_intuitionistic_expectations_wand:
+    "intuitionistic_q (sep_true -*q X)" 
+    "(sep_true -*q X) \<le> X"
+    "\<And>X'. intuitionistic_q X' \<Longrightarrow> X' \<le> X \<Longrightarrow>  X' \<le> (sep_true -*q X)"
+  using tightest_intuitionistic_expectations_wand_general by auto
 
 abbreviation (input)
   pred_ex_q :: "('b \<Rightarrow> 'a \<Rightarrow> ennreal) \<Rightarrow> 'a \<Rightarrow> ennreal" (binder "EXSq " 10) where
