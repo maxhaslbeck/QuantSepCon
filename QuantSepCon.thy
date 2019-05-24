@@ -554,8 +554,20 @@ lemma sep_impl_q_monoL:
 
 lemma sep_impl_q_monoL: 
   shows "P' \<le> P \<Longrightarrow> (P -*qq Y) \<le> (P' -*qq Y)"  
+proof -
+  assume "P' \<le> P"
+  then have "\<And>x. {h'. x ## h' \<and> 0 < P' h' \<and> (P' h' < \<infinity> \<or> Y (x + h') < \<infinity>)}
+          \<subseteq> {h'. x ## h' \<and> 0 < P h' \<and> (P h' < \<infinity> \<or> Y (x + h') < \<infinity>)}"
+    apply auto 
+    subgoal for h h' apply(drule le_funD[where x=h']) by auto
+    subgoal for h h' apply(drule le_funD[where x=h'])  
+  oops
+
+lemma sep_impl_q_antimonoL: 
+  shows "P' \<le> P \<Longrightarrow> (P -*qq Y) \<le> (P' -*qq Y)"  
   unfolding sep_impl_qq_def
   apply(rule le_funI)
+
   apply(rule INF_mono)   (* TODO: I think one looses here already ! *)
   
   subgoal for  h h'  
@@ -924,7 +936,7 @@ class sized =
 
 
 class normed_sep_algebra = sep_algebra  + sized  +
-  assumes  size0: "Size 0 = 0" 
+  assumes size0: "Size 0 = 0" 
     and sizeadd_triangle: "Size (h1+h2) \<le> Size h1 + Size h2"
     and sizeadd: "h1 ## h2 \<Longrightarrow> Size (h1+h2) = Size h1 + Size h2"
 begin
@@ -957,5 +969,128 @@ proof (rule le_funI)
 qed
 
 end
+
+term dom
+ 
+
+datatype ('a, 'b) heap = Heap (theheap: "'a \<Rightarrow> 'b option")
+
+instantiation "heap"  :: (type, type) sized
+begin
+
+fun Size_heap where 
+  "Size_heap (Heap x) = (if finite (dom x) then ennreal (card (dom x)) else \<infinity>)"
+
+instance apply standard done
+
+
+end
+
+
+instantiation "heap" :: (type,type) sep_algebra
+begin
+
+  fun plus_heap :: "('a, 'b) heap \<Rightarrow> ('a, 'b) heap \<Rightarrow> ('a, 'b) heap" where
+    "plus_heap f g = Heap (\<lambda>x.  (if x \<in> dom (theheap f) then theheap f x 
+                                    else theheap g x))"
+
+  fun sep_disj_heap :: "('a, 'b) heap \<Rightarrow> ('a, 'b) heap \<Rightarrow> bool" where
+    "sep_disj_heap f g \<longleftrightarrow> dom (theheap f) \<inter> dom (theheap g) = {}"
+
+
+lemma [simp]: "\<And>x. theheap (Heap x) = x" by auto
+
+lemma exx: "theheap x = theheap y \<Longrightarrow> x = y" using heap.expand by auto
+
+definition zero_heap where [simp]: "zero_heap =  Heap (\<lambda>_. None)"
+
+instance apply standard apply auto
+  subgoal apply(rule heap.expand) apply simp apply (rule ext)
+    apply auto  
+    by (metis option.exhaust)  
+  subgoal apply(rule ext) by(auto)
+  subgoal apply(rule ext) by (auto split: if_splits)
+  subgoal by fastforce  
+  subgoal by (smt disjoint_iff_not_equal domIff option.simps(3))  
+  done
+
+end
+
+thm heap.case heap.split
+
+lemma dom_Heap_union:
+  "dom (theheap (Heap x + Heap xa)) = dom x \<union> dom xa"
+  by (auto split: if_splits)
+
+lemma **:  "Size x = 
+    (if finite (dom (theheap x)) then ennreal (card (dom (theheap x))) else \<infinity>)"
+  apply(cases x) by auto
+
+instance "heap" :: (type,type) normed_sep_algebra
+  apply standard 
+  subgoal by auto
+  subgoal for h1 h2
+    apply(cases h1; cases h2) 
+    apply (auto simp: dom_Heap_union ** split: if_splits simp del: plus_heap.simps)
+    apply(subst ennreal_plus[symmetric]) apply simp apply simp
+    apply(rule ennreal_leI) 
+    using card_Un_le of_nat_mono by fastforce  
+  subgoal for h1 h2
+    apply(cases h1; cases h2) 
+    apply (auto simp: dom_Heap_union ** split: if_splits simp del: plus_heap.simps)
+    apply(subst ennreal_plus[symmetric]) apply simp apply simp 
+    apply(rule ennreal_cong) 
+    by (simp add: card_Un_disjoint)  
+  done
+
+
+instantiation nat :: sized
+begin
+
+fun Size_nat :: "nat\<Rightarrow>ennreal" where "Size_nat n = (ennreal n)"
+
+instance by standard
+end
+
+
+
+text  \<open>nat is a separation algebra\<close>
+ 
+
+instantiation nat :: sep_algebra
+begin
+  fun sep_disj_nat :: "nat \<Rightarrow> nat \<Rightarrow> bool" where
+   "sep_disj_nat n1 n2 \<longleftrightarrow> True" 
+  
+  fun sep_plus_nat :: "nat \<Rightarrow> nat \<Rightarrow> nat" where
+   "sep_plus_nat n1 n2 = n1 + n2" 
+
+  instance
+    apply standard by auto
+end
+
+
+instance nat :: normed_sep_algebra
+  apply(standard)  by auto
+
+instantiation prod :: (sized,sized) sized
+begin
+definition Size_prod :: "'a \<times> 'b \<Rightarrow> ennreal"  where [simp]:
+  "Size_prod  = (\<lambda>(a,b). Size a + Size b)"
+
+instance by standard
+
+end
+ 
+instance prod :: (normed_sep_algebra, normed_sep_algebra) normed_sep_algebra
+  apply standard
+    apply (auto simp: zero_prod_def size0 plus_prod_def)
+  subgoal 
+    by (simp add: sizeadd_triangle add_mono_thms_linordered_semiring(1) semiring_normalization_rules(20))
+  subgoal by(simp add: sep_disj_prod_def sizeadd)
+  done
+
+
+
 
 end

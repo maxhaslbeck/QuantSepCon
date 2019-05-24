@@ -184,4 +184,43 @@ lemma theorem_3_11_3':
 end
 
 
+
+context normed_sep_algebra
+begin                                          
+
+term SIZE
+definition SIZE where
+    "SIZE = (\<lambda>(s,h). Size h)"
+
+lemma "a ## b \<longleftrightarrow> (dom (theheap a)) \<inter> (dom (theheap b)) =  {}"
+  by simp
+
+
+definition map_of_heap :: "('c\<Rightarrow>'d tsa_opt) \<Rightarrow> 'c \<Rightarrow> 'd option"  where
+  "map_of_heap h a = (case h a of ZERO \<Rightarrow> None | TRIV a \<Rightarrow> Some a)"
+
+
+lemma pp: "(dom (  a)) \<inter> (dom (  b)) =  {} 
+        \<longleftrightarrow> (\<forall>x. a x = None \<or> b x = None)" 
+  by (metis disjoint_iff_not_equal domIff)  
+
+lemma fixes
+  a b :: "'c \<Rightarrow> 'd tsa_opt"
+  shows "a ## b \<longleftrightarrow> (dom (map_of_heap  a)) \<inter> (dom (map_of_heap  b)) =  {}"
+  unfolding sep_disj_fun_def sep_disj_option.simps pp map_of_heap_def
+  apply auto subgoal  
+    by (metis option.distinct(1) sep_disj_tsa_opt_def tsa_opt.case_eq_if)  
+  subgoal for x apply(cases "a x";cases "b x")
+    by (auto split: tsa_opt.splits simp: sep_disj_tsa_opt_def )
+  done
+
+lemma 
+  fixes P :: "('b*'a) \<Rightarrow> ennreal"
+  shows "SIZE \<star> P = P \<star> SIZE"
+  oops
+
+
+end
+
+
 end
