@@ -104,6 +104,9 @@ lemma sep_conj_s_q_mono:
   apply(rule sep_conj_q_mono[THEN le_funD]) 
   by (auto simp: le_fun_def emb_def) 
 
+lemma sep_conj_s_q_mono':
+    "A \<le> B \<Longrightarrow> X \<le> Y \<Longrightarrow>   A\<star> X   \<le>   B\<star> Y  "
+  apply(rule le_funI) apply(rule sep_conj_s_q_mono) by auto
 
 subsubsection \<open>Algebraic Laws for * under purity\<close>
 

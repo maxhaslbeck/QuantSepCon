@@ -1,6 +1,6 @@
 (*
   Author: Maximilian P. L. Haslbeck
-  Author: 
+  Author: Christoph Matheja
 *)
 theory QuantSepCon
   imports
@@ -158,13 +158,26 @@ lemma sep_impl_q_range: "(P -*q (emb Q)) h \<in> {0,1}"
   apply(rule Inf_zeroone)
   subgoal apply simp oops (* only holds for {0..1} instead of ennreal *)
 
+(* only holds for {0..1} instead of ennreal ! 
+lemma "(P  \<longrightarrow>* Q)  =  (\<lambda>x. (P -*q (emb Q)) x  = 1)"
+  apply(rule ext)
+proof -
+  fix h
+  have " (P -*q (emb Q)) h = 1 \<longleftrightarrow> ((INF h':{h'. h ## h' \<and> P h'}. emb Q (h + h')) = 1)"
+    unfolding sep_impl_q_alt by simp 
+  also have "\<dots> \<longleftrightarrow> (\<forall>h'. h ## h' \<and> P h' \<longrightarrow> Q (h + h'))"
+    apply(rule antisym)
+    subgoal apply auto sorry
+    subgoal apply auto apply (auto simp: emb_def INF_constant)
+             
+      sorry
+    done
+  also have "\<dots> \<longleftrightarrow> (P  \<longrightarrow>* Q) h" unfolding sep_impl_def by auto
+  finally show "(P  \<longrightarrow>* Q) h \<longleftrightarrow> (P -*q (emb Q)) h = 1" by simp
+qed
+*)
 
-lemma "(P  \<longrightarrow>* Q) h \<longleftrightarrow> (P -*q (emb Q)) h = 1"
-  sorry
-
-
-
-lemma "(P ** Q) h \<longleftrightarrow> ((emb P) **q (emb Q)) h = 1" 
+lemma star_conservative: "(P ** Q) h \<longleftrightarrow> ((emb P) **q (emb Q)) h = 1" 
 proof -
   have "(P ** Q) h = (\<exists>xa y. xa ## y \<and> h = xa + y \<and> emb P xa = 1 \<and> emb Q y = 1)"
     unfolding sep_conj_def emb_1 by auto
@@ -176,7 +189,14 @@ proof -
       subgoal apply(rule Sup_upper) by force 
       done
     subgoal  
-      sorry
+    proof (rule ccontr, goal_cases)
+      case 1
+      from 1(2) have "\<And>x y. (x,y) \<in> {(x,y) | x y. h = x + y \<and> x ## y} \<Longrightarrow> emb P x * emb Q y = 0 "
+        apply auto  unfolding emb_def by(auto split: if_splits)  
+      with  1(1) 
+        show "False"  
+          by (smt Sup_le_iff le_zero_eq mem_Collect_eq not_one_le_zero)  
+    qed 
     done
   also have "\<dots> = (((emb P) **q (emb Q)) h = 1)" unfolding sep_conj_q_def by simp
   finally show ?thesis .
@@ -398,13 +418,26 @@ qed
 
 
 subsubsection \<open>Or\<close>
+lemma ennreal_supmax: "\<And>x y::ennreal. sup x y = max x y" 
+  apply (rule antisym) by auto   
 
-lemma "emb (X or Y) = (max (emb X) (emb Y))" 
-  sorry
 
+lemma "emb (X or Y) = (sup (emb X) (emb Y))" 
+  unfolding emb_def apply(rule ext) unfolding  sup_fun_def apply auto
+  by(auto simp add: ennreal_supmax max_def) 
 
+ 
+(*
 lemma "((emb X) **q (emb Y)) = 0 \<Longrightarrow> emb (X or Y) = (emb X) + (emb Y)" 
-  sorry
+  unfolding emb_def apply(rule ext) unfolding  plus_fun_def sep_conj_q_alt apply auto
+  subgoal for x proof (goal_cases)
+    case 1
+    from 1(2,3) have "\<not> (\<lambda>h. SUP (x, y):{(x, y). h = x + y \<and> x ## y}.   (if X x then 1 else 0) * (if Y y then 1::ennreal else 0)) \<le> (\<lambda>_.0)"
+      apply(simp add: le_fun_def) apply(rule exI[where x=x])
+      apply auto
+      apply(intro SUP_upper2[where i="(x, x)"]) try0
+    then show ?case sorry
+  qed *)
 
 
 
@@ -512,8 +545,8 @@ subsubsection \<open>adjointness of star and magicwand\<close>
 
 text \<open>theorem 3.9\<close>
 
-lemma adjoint: "(X **q (emb P)) \<le> Y \<longleftrightarrow> X \<le> (P -*q Y)"
-proof
+lemma adjoint_ltor: "(X **q (emb P)) \<le> Y \<Longrightarrow> X \<le> (P -*q Y)"
+proof -
   assume "(X **q emb P) \<le> Y"
   with star_comm have "(emb P **q X) \<le> Y"
     by auto
@@ -549,10 +582,6 @@ proof
       finally show ?thesis .
     qed
   qed 
-next
-  assume "X \<le> (P -*q Y)"
-  show "(X **q emb P) \<le> Y"
-    sorry
 qed
 
 
@@ -635,6 +664,10 @@ proof -
     by simp
   finally show ?thesis by simp
 qed
+
+  
+lemma adjoint: "(X **q (emb P)) \<le> Y \<longleftrightarrow> X \<le> (P -*q Y)"
+  using adjoint_general by simp
 
 subsubsection \<open>quantitative modus ponens\<close>
 
