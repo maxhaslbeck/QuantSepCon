@@ -19,8 +19,11 @@ subsection \<open>Stuff about SUP and various operations\<close>
 
 lemma SUP_plus_subdistrib:
   "(SUP (h1,h2):A.  f h1 h2 + g h1 h2 :: ennreal) \<le> (SUP (h1,h2):A.  f h1 h2) + (SUP (h1,h2):A.  g h1 h2)"
-  sorry
+  apply(rule Sup_least) apply auto 
+  apply(rule add_mono) by(auto intro: SUP_upper2)  
 
+term sup_continuous
+thm mult_mono
 
 
 lemma SUP_times_distrib: "(SUP x:A. f x * g x::ennreal) \<le> (SUP x:A. f x) * (SUP x:A. g x)" sorry
@@ -464,7 +467,7 @@ next
       by (auto simp: mult.assoc)
     also have "... =   (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. (emb \<phi> h1 * Q h2) * ( emb \<phi> h1  * R h2))"
       apply (subst (1) emb_squared)
-      apply (simp add: mult.assoc mult.commute)
+      apply (simp add: mult.assoc mult.commute) thm mult_ac
       sorry
     also have "... \<le> (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. (emb \<phi> h1 * Q h2)) * (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}.  ( emb \<phi> h1  * R h2))"
       by (rule SUP_times_distrib2)
