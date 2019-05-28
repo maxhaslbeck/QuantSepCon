@@ -464,8 +464,7 @@ next
       by (auto simp: mult.assoc)
     also have "... =   (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. (emb \<phi> h1 * Q h2) * ( emb \<phi> h1  * R h2))"
       apply (subst (1) emb_squared)
-      apply (simp add: mult.assoc mult.commute)
-      sorry
+      by (simp add: mult_ac mult.assoc mult.commute)
     also have "... \<le> (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. (emb \<phi> h1 * Q h2)) * (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}.  ( emb \<phi> h1  * R h2))"
       by (rule SUP_times_distrib2)
     also have "... = (((emb \<phi>) **q Q) * ((emb \<phi>) **q R)) h"  by (simp add: local.sep_conj_q_alt)
