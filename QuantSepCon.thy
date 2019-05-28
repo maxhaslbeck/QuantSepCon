@@ -22,6 +22,13 @@ lemma SUP_plus_subdistrib:
   sorry
 
 
+
+lemma SUP_times_distrib: "(SUP x:A. f x * g x::ennreal) \<le> (SUP x:A. f x) * (SUP x:A. g x)" sorry
+
+lemma SUP_times_distrib2: "(SUP (x,y):A. f x y * g x y::ennreal) \<le> (SUP (x, y):A. f x y) * (SUP (x, y):A. g x y)" sorry
+
+
+
 text \<open>enable multiplication on functions\<close>
 
 instance "fun" :: (type,zero) zero
@@ -38,6 +45,9 @@ definition emb :: "('b \<Rightarrow> bool) \<Rightarrow> 'b  \<Rightarrow> ennre
   "emb P x = (if P x then 1 else 0)"
 
 lemma emb_range: "emb P x \<in> {0,1}" unfolding emb_def by auto
+
+lemma emb_squared: "emb P x = emb P x * emb P x"
+  apply (cases "emb P x = 0") using emb_range apply auto by fastforce
 
 context sep_algebra
 begin
@@ -356,7 +366,7 @@ subsubsection \<open>(Sub)distributivity Laws\<close>
  
 term "Q * (R::_\<Rightarrow>ennreal)"
 
-lemma theorem_3_6:
+lemma theorem_3_6: 
   "(P **q (sup Q R)) = sup (P **q Q) (P **q R)"
   "(P **q (Q + R)) \<le> (P **q Q) + (P **q R)"
   "( (emb \<phi>) **q (Q * R)) \<le> ((emb \<phi>) **q Q) * ((emb \<phi>) **q R)"
@@ -446,7 +456,21 @@ next
   qed
 next
   show "( (emb \<phi>) **q (Q * R)) \<le> ((emb \<phi>) **q Q) * ((emb \<phi>) **q R)"
-    sorry
+  proof (rule le_funI)
+    fix h
+    have "( (emb \<phi>) **q (Q * R)) h  =  (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. emb \<phi> h1 * (Q * R) h2)" unfolding sep_conj_q_alt by simp
+    also have "... = (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. emb \<phi> h1 * Q h2 * R h2)" apply (rule SUP_cong) 
+       apply simp
+      by (auto simp: mult.assoc)
+    also have "... =   (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. (emb \<phi> h1 * Q h2) * ( emb \<phi> h1  * R h2))"
+      apply (subst (1) emb_squared)
+      apply (simp add: mult.assoc mult.commute)
+      sorry
+    also have "... \<le> (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. (emb \<phi> h1 * Q h2)) * (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}.  ( emb \<phi> h1  * R h2))"
+      by (rule SUP_times_distrib2)
+    also have "... = (((emb \<phi>) **q Q) * ((emb \<phi>) **q R)) h"  by (simp add: local.sep_conj_q_alt)
+    finally show "( (emb \<phi>) **q (Q * R)) h \<le> (((emb \<phi>) **q Q) * ((emb \<phi>) **q R)) h".
+  qed
 qed
 
 
