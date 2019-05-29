@@ -1,6 +1,7 @@
 (*
   Author: Maximilian P. L. Haslbeck
   Author: Christoph Matheja
+  Author: Kevin Batz
 *)
 theory QuantSepCon
   imports
@@ -9,7 +10,13 @@ theory QuantSepCon
   "HOL-Library.Extended_Nonnegative_Real" 
 begin
 
+section \<open>Misc\<close>
 
+subsection \<open>Stuff about ennreal\<close>
+
+
+lemma ennreal_div_one: "x / 1 = (x::ennreal)"
+by (metis ennreal_top_neq_one mult.right_neutral mult_divide_eq_ennreal one_neq_zero)
 
 
 subsection \<open>Stuff about SUP and various operations\<close>
@@ -52,6 +59,8 @@ lemma emb_range: "emb P x \<in> {0,1}" unfolding emb_def by auto
 lemma emb_squared: "emb P x = emb P x * emb P x"
   apply (cases "emb P x = 0") using emb_range apply auto by fastforce
 
+section \<open>Quantitative Separating Connectives\<close>
+
 context sep_algebra
 begin
 
@@ -67,50 +76,16 @@ definition
   where
   "P **q Q \<equiv> \<lambda>h. Sup { P x * Q y | x y. h=x+y \<and> x ## y}" (* why not Sup ? *)
 
-definition qStar :: "('a \<Rightarrow> ennreal) \<Rightarrow> ('a \<Rightarrow> ennreal) \<Rightarrow> 'a \<Rightarrow> ennreal" where
-"qStar P Q = (\<lambda>h. ( SUP (h1,h2):{(h1,h2)| h1 h2. h1 ## h2 \<and> h1 + h2 = h} . P h1 * Q h2))"
-
-lemma "qStar P Q = (P **q Q)"
-  unfolding qStar_def sep_conj_q_def
-  thm ext
-  apply(rule ext)
-  thm arg_cong
-  apply(rule arg_cong[where f=Sup])
-  apply auto
-  done
-
 lemma sep_conj_q_alt : "(P **q Q) = (\<lambda>h. (SUP (x,y): {(x,y). h=x+y \<and> x ## y}. P x * Q y))"
   unfolding  sep_conj_q_def
   apply auto apply(rule ext)
   apply(rule arg_cong[where f=Sup]) by auto
 
 
-thm Sup_mono
 
-term "Sup (f ` S)"
-term "SUP s:S. f s"
 
-find_theorems name: Sup_cong
-lemma (in -) Sup_cong: "\<And>S S'. S=S' \<Longrightarrow> Sup S = Sup S'"
+lemma Sup_cong: "\<And>S S'. S=S' \<Longrightarrow> Sup S = Sup S'"
   by simp
-find_theorems name: Sup_cong
-
-thm SUP_cong
-
-lemma "Sup (f ` S) = (SUP s:S. f s)"
-  apply(rule arg_cong[where f=Sup]) by simp
-
-lemmas Sup_cong2 = arg_cong[where f=Sup]
-thm Sup_cong2
-find_theorems "Sup"
-
-lemma "Sup (f ` S) = (SUP s:S. f s)"
-  apply(rule Sup_cong) by simp
-
-
-
-
-
 
 lemma sep_conj_q_SUP: "(P **q Q) = (\<lambda>h. (SUP i:{(x,y)| x y. h=x+y \<and> x ## y}. (\<lambda>(x,y). P x * Q y) i))"
   unfolding sep_conj_q_def apply auto  apply (rule ext)
@@ -125,17 +100,9 @@ definition
   where
   "P -*qq Q \<equiv> \<lambda>h. INF h': { h'. h ## h' \<and> P(h') > 0 \<and> (P h' < \<infinity> \<or> Q (h+h') < \<infinity>)}. Q (h + h') / P(h')"
 
-(*definition
-  sep_impl_q :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> ennreal) \<Rightarrow> ('a \<Rightarrow> ennreal)" (infixr "-*q" 35)
-  where
-  "P -*q Q \<equiv> \<lambda>h. Inf {  Q (h + h') | h'. h ## h' \<and> P h'}"
-*)
-
 abbreviation sep_impl_q (infixr "-*q" 35) where   "(P -*q Q) \<equiv> (emb P -*qq Q)" 
 
  
-lemma ennreal_div_one: "x / 1 = (x::ennreal)"
-by (metis ennreal_top_neq_one mult.right_neutral mult_divide_eq_ennreal one_neq_zero)
 
 lemma sep_impl_q_alt:
   "(P -*q Q) = (\<lambda>h. INF h': { h'. h ## h' \<and> P h'}. Q (h + h'))"
