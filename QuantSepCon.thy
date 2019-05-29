@@ -33,14 +33,13 @@ lemma SUP_plus_subdistrib2:
   apply(rule Sup_least) apply auto 
   apply(rule add_mono) by(auto intro: SUP_upper2)  
 
-term sup_continuous
-thm mult_mono
 
+lemma SUP_times_distrib: "(SUP x:A. f x * g x::ennreal) \<le> (SUP x:A. f x) * (SUP x:A. g x)" 
+      by (simp add: SUP_least SUP_upper mult_mono)
 
-lemma SUP_times_distrib: "(SUP x:A. f x * g x::ennreal) \<le> (SUP x:A. f x) * (SUP x:A. g x)" sorry
-
-lemma SUP_times_distrib2: "(SUP (x,y):A. f x y * g x y::ennreal) \<le> (SUP (x, y):A. f x y) * (SUP (x, y):A. g x y)" sorry
-
+lemma SUP_times_distrib2: "(SUP (x,y):A. f x y * g x y::ennreal) \<le> (SUP (x, y):A. f x y) * (SUP (x, y):A. g x y)" 
+  apply(rule Sup_least) apply auto 
+  apply(rule mult_mono) by(auto intro: SUP_upper2)  
 
 
 text \<open>enable multiplication on functions\<close>
