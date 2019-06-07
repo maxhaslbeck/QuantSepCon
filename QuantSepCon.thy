@@ -129,12 +129,96 @@ datatype ennreal_inv = E (thee: ennreal)
 lemma INF_mult_left_ennreal: "(INF xa:I. x * f xa :: ennreal ) = x * (INF x:I. f x)"
    
   sorry
+ 
+(*
+lemma INF_ennreal_add_const':
+  fixes f g :: "_ \<Rightarrow> ennreal" 
+  shows "(INF i:I. f i + c) = (INF i:I. f i) + c"
+proof (cases "I \<noteq> {}")
+  case True
+  then show ?thesis
+    apply(subst ennreal_approx_INF[symmetric, of _ "(INF i:I. f i) + c"])
+    apply(rule add_mono) apply(rule INF_lower) apply simp_all 
+  proof -
+    fix e
+    from True obtain i where "f i \<le> (INF x:I. f x)" and iI: "i\<in>I" 
+       
+      sorry
+    then have "\<And>c. f i \<le> (INF x:I. f x) + ennreal c"  
+      by (metis add.right_neutral add_mono zero_le)  
+    with iI show "\<exists>i\<in>I. c = top \<or> f i \<le> (INF x:I. f x) + ennreal e"
+      apply(intro bexI[where x=i]) by auto  
+  qed
+next
+  case False
+  then show ?thesis by auto
+qed 
+  *)
 
+thm INF_ennreal_add_const
+
+
+lemma INF_ereal_add_left:
+  assumes "I \<noteq> {}" "c \<noteq> -\<infinity>" "\<And>x. x \<in> I \<Longrightarrow> 0 \<le> f x"
+  shows "(INF i:I. f i + c :: ereal) = (INF i:I. f i) + c"
+proof -
+  have "(INF i:I. f i) \<noteq> -\<infinity>"
+    unfolding INF_eq_minf using assms by (intro exI[of _ 0]) auto
+  then show ?thesis
+    apply (subst continuous_at_Inf_mono[where f="\<lambda>x. x + c"])
+        apply     (auto simp: mono_def ereal_add_mono \<open>I \<noteq> {}\<close> \<open>c \<noteq> -\<infinity>\<close> )
+    apply(subst continuous_at_imp_continuous_at_within )
+    apply(subst continuous_at)  apply (auto simp:     \<open>I \<noteq> {}\<close> \<open>c \<noteq> -\<infinity>\<close> ) sorry
+qed
+lemma INF_ennreal_add_const'':
+  fixes f g :: "_ \<Rightarrow> ennreal" 
+  shows "(INF i:I. f i + c) = (INF i:I. f i) + c"
+proof (cases "I \<noteq> {}")
+  case True 
+  then  show ?thesis 
+  apply(subst   continuous_at_Inf_mono[of "\<lambda>x. x + c" ])
+        apply (auto simp: mono_def   \<open>I \<noteq> {}\<close>    ) 
+    apply(subst continuous_at_imp_continuous_at_within) 
+     apply(subst continuous_at)
+     apply auto
+    unfolding filterlim_def   sorry 
+qed auto
+
+lemma INF_ennreal_add_const':
+  fixes f g :: "_ \<Rightarrow> ennreal" 
+  shows "(INF i:I. f i + c) = (INF i:I. f i) + c"
+  using INF_ereal_add_right
+proof (cases "I \<noteq> {}")
+  case True
+  then show ?thesis
+    apply(subst ennreal_approx_INF[symmetric, of _ "(INF i:I. f i) + c"])
+    apply(rule add_mono) apply(rule INF_lower) apply simp_all 
+  proof -
+    fix e
+    from True obtain i where "f i \<le> (INF x:I. f x)" and iI: "i\<in>I" 
+       
+      sorry
+    then have "\<And>c. f i \<le> (INF x:I. f x) + ennreal c"  
+      by (metis add.right_neutral add_mono zero_le)  
+    with iI show "\<exists>i\<in>I. c = top \<or> f i \<le> (INF x:I. f x) + ennreal e"
+      apply(intro bexI[where x=i]) by auto  
+  qed
+next
+  case False
+  then show ?thesis by auto
+qed 
+
+
+
+lemma INF_ennreal_const_add':
+  fixes f g :: "_ \<Rightarrow> ennreal" 
+  shows "(INF i:I. c + f i) = c + (INF i:I. f i)" 
+    using   INF_ennreal_add_const'[of f c I ] by (simp add: ac_simps) 
 
 instantiation ennreal_inv :: SUP_mult_left
 begin
 
-fun times_ennreal_inv where "times_ennreal_inv (E x1) (E x2) = E (x1 * x2)"
+fun times_ennreal_inv where "times_ennreal_inv (E x1) (E x2) = E (x1 + x2)"
 fun Inf_ennreal_inv where "Inf_ennreal_inv A = E (Sup (thee ` A))"
 fun Sup_ennreal_inv where "Sup_ennreal_inv A = E (Inf (thee ` A))"
 definition bot_ennreal_inv where [simp]: "bot_ennreal_inv = E top"
@@ -143,7 +227,9 @@ definition top_ennreal_inv where  [simp]: "top_ennreal_inv = E bot"
 fun  inf_ennreal_inv where "inf_ennreal_inv (E a) (E b) = E (sup a b)"
 fun  less_eq_ennreal_inv where "less_eq_ennreal_inv (E a) (E b) = (a \<ge> b)"
 fun  less_ennreal_inv where "less_ennreal_inv (E a) (E b) = (a > b)"
-
+                               
+lemma thee_times: "thee (a * b) = thee a + thee b"
+  apply(cases a; cases b) by auto
 
 instance apply(standard)
   subgoal for x y apply(cases x; cases y) by auto
@@ -166,16 +252,7 @@ instance apply(standard)
     by (metis INF_greatest ennreal_inv.collapse less_eq_ennreal_inv.simps) 
   subgoal   by auto
   subgoal   by auto
-  subgoal for c f I apply(cases c) apply simp 
-  proof -
-    fix x
-    have "(INF xa:I. thee (E x * f xa)) = (INF xa:I. x * (thee o f) xa)"
-      apply(rule INF_cong) apply auto  
-      by (metis ennreal_inv.collapse ennreal_inv.inject times_ennreal_inv.simps)  
-    also have "\<dots> =  x * (INF x:I. (thee o f) x)"
-      by(rule INF_mult_left_ennreal)  
-    finally show  " x * (INF x:I. thee (f x)) = (INF xa:I. thee (E x * f xa))" by simp
-  qed
+  subgoal for c f I apply(cases c) by (simp add: thee_times INF_ennreal_const_add')   
   done
 end
  
@@ -219,21 +296,42 @@ subsection \<open>Quantitative Separating Implication - Magic Wand\<close>
 definition
   sep_impl_qq :: "('a \<Rightarrow> 'b) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> ('a \<Rightarrow> 'b::{ord, SUP_mult_left, inverse})" (infixr "-*qq" 35)
   where
-  "P -*qq Q \<equiv> \<lambda>h. INF h': { h'. h ## h' \<and> P(h') > bot \<and> (P h' < top \<or> Q (h+h') < top)}. Q (h + h') / P(h')"
+  "P -*qq Q \<equiv> \<lambda>h. INF h': { h'. h ## h' \<and> (bot < P h' \<or> bot < Q (h+h') ) \<and> (P h' < top \<or> Q (h+h') < top)}. Q (h + h') / P(h')"
 
-abbreviation sep_impl_q (infixr "-*q" 35) where   "(P -*q Q) \<equiv> (emb P -*qq Q)" 
+subsection \<open>Embedding of SL into QSL\<close>
+
+
+print_classes
+
+abbreviation sep_impl_q (infixr "-*q" 35) where   "(P -*q Q) \<equiv> (embc P -*qq Q)" 
+
+lemma "x/ (\<infinity>::ennreal) = g" apply simp oops
 
  
+
+lemma 
+  assumes "P = (\<lambda>_. True)"
+  shows
+  "(P -*q Q) = (\<lambda>h. INF h': { h'. h ## h' \<and> P h'}. Q (h + h'))"
+  apply (rule ext)
+  unfolding sep_impl_qq_def embc_def
+  using assms apply simp
 
 lemma sep_impl_q_alt:
   "(P -*q Q) = (\<lambda>h. INF h': { h'. h ## h' \<and> P h'}. Q (h + h'))"
   apply (rule ext)
-  unfolding sep_impl_qq_def emb_def
+  unfolding sep_impl_qq_def embc_def
+  apply(rule antisym)
+  subgoal for h
+  apply(rule Inf_greatest) apply auto
+  apply(rule Inf_lower2)  subgoal for m apply(rule exI[where x=m]) apply auto
   apply (rule INF_cong)
+  subgoal
+    apply (auto simp:ennreal_div_one  bot_ennreal) sorry
+  subgoal
    apply (auto simp:ennreal_div_one  bot_ennreal) 
-  done
+  done  
 
-subsection \<open>Embedding of SL into QSL\<close>
 
 
 lemma Sup_zeroone: " P \<subseteq> {0,1} \<Longrightarrow> Sup P \<in> {0,1::ennreal}"
@@ -742,7 +840,7 @@ lemma sep_impl_q_monoL:
   unfolding sep_impl_qq_def
   apply(rule le_funI)
   apply(rule INF_mono) apply auto oops
-
+(*
 lemma sep_impl_q_monoL: 
   shows "P' \<le> P \<Longrightarrow> (P -*qq Y) \<le> (P' -*qq Y)"  
 proof -
@@ -779,7 +877,7 @@ lemma sep_impl_q_mono:
   apply(rule order.trans)
   apply(rule sep_impl_q_monoR) apply simp oops
  (* apply(rule sep_impl_q_monoL) apply simp *)
-  
+  *)
 
 subsubsection \<open>adjointness of star and magicwand\<close>
 
@@ -851,7 +949,7 @@ lemma "0 * (\<infinity>::ennreal) = 0"
 lemma adjoint_general:
   shows "(X **q P) \<le> Y \<longleftrightarrow> X \<le> (P -*qq Y)"
 proof - 
-  have eq79: "\<And>h h'. h ## h' \<Longrightarrow> bot < P h'  \<Longrightarrow> (P h' < top \<or> Y (h+h') < top) \<Longrightarrow> ( X h \<le> Y (h + h') / P h') \<longleftrightarrow> X h * P h' \<le> Y(h+h') "
+  have eq79: "\<And>h h'. h ## h' \<Longrightarrow> (bot < P h' \<or> bot < Y (h+h') )  \<Longrightarrow> (P h' < top \<or> Y (h+h') < top) \<Longrightarrow> ( X h \<le> Y (h + h') / P h') \<longleftrightarrow> X h * P h' \<le> Y(h+h') "
     subgoal for h h'
       apply rule
       subgoal using mult_left_mono[where a="X h" and b="Y (h + h') / P h'" and c="P h'"]
@@ -879,15 +977,13 @@ proof -
   thm eq79[where h'=0]
   have "X \<le> (P -*qq Y) \<longleftrightarrow> (\<forall> h. X h \<le> (P -*qq Y) h)"
     by (simp add: le_fun_def)
-  also have "... \<longleftrightarrow> (\<forall>h. X h \<le> (INF h':{h'. h ## h' \<and> bot < P h'\<and> (P h' < top \<or> Y (h+h') < top) }. Y (h + h') / P h'))" 
+  also have "... \<longleftrightarrow> (\<forall>h. X h \<le> (INF h':{h'. h ## h' \<and> (bot < P h' \<or> bot < Y (h+h') ) \<and> (P h' < top \<or> Y (h+h') < top) }. Y (h + h') / P h'))" 
     unfolding sep_impl_qq_def
     by simp  
-  also have "... \<longleftrightarrow> (\<forall>h h'. h ## h' \<and> bot < P h' \<and> (P h' < top \<or> Y (h+h') < top)  \<longrightarrow> X h \<le> Y (h + h') / P h')" 
+  also have "... \<longleftrightarrow> (\<forall>h h'. h ## h' \<and> (bot < P h' \<or> bot < Y (h+h') ) \<and> (P h' < top \<or> Y (h+h') < top)  \<longrightarrow> X h \<le> Y (h + h') / P h')" 
     by (simp add: le_INF_iff)
-  also have "... \<longleftrightarrow>  (\<forall>h h'. h ## h' \<and> bot < P h' \<and> (P h' < top \<or> Y (h+h') < top)  \<longrightarrow> X h * P h' \<le> Y (h + h'))"
-    using eq79 by auto
   also have "... \<longleftrightarrow>  (\<forall>h h'. h ## h' \<and> (bot < P h' \<or> bot < Y (h+h') ) \<and> (P h' < top \<or> Y (h+h') < top)  \<longrightarrow> X h * P h' \<le> Y (h + h'))"
-    sorry
+    using eq79 by auto 
   also have "... \<longleftrightarrow> (\<forall>a b. a ## b \<longrightarrow> X a * P b \<le> Y (a + b))" 
     apply auto
     subgoal for a b
