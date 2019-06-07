@@ -1,6 +1,7 @@
 (*
   Author: Maximilian P. L. Haslbeck
   Author: Christoph Matheja
+  Author: Kevin Batz
 *)
 theory QuantSepCon
   imports
@@ -9,17 +10,36 @@ theory QuantSepCon
   "HOL-Library.Extended_Nonnegative_Real" 
 begin
 
+section \<open>Misc\<close>
 
+subsection \<open>Stuff about ennreal\<close>
+
+
+lemma ennreal_div_one: "x / 1 = (x::ennreal)"
+by (metis ennreal_top_neq_one mult.right_neutral mult_divide_eq_ennreal one_neq_zero)
 
 
 subsection \<open>Stuff about SUP and various operations\<close>
 
 
+lemma Sup_cong: "\<And>S S'. S=S' \<Longrightarrow> Sup S = Sup S'"
+  by simp
 
+lemma SUP_plus_subdistrib: "\<And>S. \<And>f g::_\<Rightarrow>ennreal. (SUP x:S. f x + g x) \<le> (SUP x:S. f x) + (SUP x:S. g x)"
+      by (simp add: SUP_least SUP_upper add_mono)
 
-lemma SUP_plus_subdistrib:
+lemma SUP_plus_subdistrib2:
   "(SUP (h1,h2):A.  f h1 h2 + g h1 h2 :: ennreal) \<le> (SUP (h1,h2):A.  f h1 h2) + (SUP (h1,h2):A.  g h1 h2)"
-  sorry
+  apply(rule Sup_least) apply auto 
+  apply(rule add_mono) by(auto intro: SUP_upper2)  
+
+
+lemma SUP_times_distrib: "(SUP x:A. f x * g x::ennreal) \<le> (SUP x:A. f x) * (SUP x:A. g x)" 
+      by (simp add: SUP_least SUP_upper mult_mono)
+
+lemma SUP_times_distrib2: "(SUP (x,y):A. f x y * g x y::ennreal) \<le> (SUP (x, y):A. f x y) * (SUP (x, y):A. g x y)" 
+  apply(rule Sup_least) apply auto 
+  apply(rule mult_mono) by(auto intro: SUP_upper2)  
 
 
 text \<open>enable multiplication on functions\<close>
@@ -39,6 +59,11 @@ definition emb :: "('b \<Rightarrow> bool) \<Rightarrow> 'b  \<Rightarrow> ennre
 
 lemma emb_range: "emb P x \<in> {0,1}" unfolding emb_def by auto
 
+lemma emb_squared: "emb P x = emb P x * emb P x"
+  apply (cases "emb P x = 0") using emb_range apply auto by fastforce
+
+section \<open>Quantitative Separating Connectives\<close>
+
 context sep_algebra
 begin
 
@@ -54,50 +79,10 @@ definition
   where
   "P **q Q \<equiv> \<lambda>h. Sup { P x * Q y | x y. h=x+y \<and> x ## y}" (* why not Sup ? *)
 
-definition qStar :: "('a \<Rightarrow> ennreal) \<Rightarrow> ('a \<Rightarrow> ennreal) \<Rightarrow> 'a \<Rightarrow> ennreal" where
-"qStar P Q = (\<lambda>h. ( SUP (h1,h2):{(h1,h2)| h1 h2. h1 ## h2 \<and> h1 + h2 = h} . P h1 * Q h2))"
-
-lemma "qStar P Q = (P **q Q)"
-  unfolding qStar_def sep_conj_q_def
-  thm ext
-  apply(rule ext)
-  thm arg_cong
-  apply(rule arg_cong[where f=Sup])
-  apply auto
-  done
-
 lemma sep_conj_q_alt : "(P **q Q) = (\<lambda>h. (SUP (x,y): {(x,y). h=x+y \<and> x ## y}. P x * Q y))"
   unfolding  sep_conj_q_def
   apply auto apply(rule ext)
   apply(rule arg_cong[where f=Sup]) by auto
-
-
-thm Sup_mono
-
-term "Sup (f ` S)"
-term "SUP s:S. f s"
-
-find_theorems name: Sup_cong
-lemma (in -) Sup_cong: "\<And>S S'. S=S' \<Longrightarrow> Sup S = Sup S'"
-  by simp
-find_theorems name: Sup_cong
-
-thm SUP_cong
-
-lemma "Sup (f ` S) = (SUP s:S. f s)"
-  apply(rule arg_cong[where f=Sup]) by simp
-
-lemmas Sup_cong2 = arg_cong[where f=Sup]
-thm Sup_cong2
-find_theorems "Sup"
-
-lemma "Sup (f ` S) = (SUP s:S. f s)"
-  apply(rule Sup_cong) by simp
-
-
-
-
-
 
 lemma sep_conj_q_SUP: "(P **q Q) = (\<lambda>h. (SUP i:{(x,y)| x y. h=x+y \<and> x ## y}. (\<lambda>(x,y). P x * Q y) i))"
   unfolding sep_conj_q_def apply auto  apply (rule ext)
@@ -112,17 +97,9 @@ definition
   where
   "P -*qq Q \<equiv> \<lambda>h. INF h': { h'. h ## h' \<and> P(h') > 0 \<and> (P h' < \<infinity> \<or> Q (h+h') < \<infinity>)}. Q (h + h') / P(h')"
 
-(*definition
-  sep_impl_q :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> ennreal) \<Rightarrow> ('a \<Rightarrow> ennreal)" (infixr "-*q" 35)
-  where
-  "P -*q Q \<equiv> \<lambda>h. Inf {  Q (h + h') | h'. h ## h' \<and> P h'}"
-*)
-
 abbreviation sep_impl_q (infixr "-*q" 35) where   "(P -*q Q) \<equiv> (emb P -*qq Q)" 
 
  
-lemma ennreal_div_one: "x / 1 = (x::ennreal)"
-by (metis ennreal_top_neq_one mult.right_neutral mult_divide_eq_ennreal one_neq_zero)
 
 lemma sep_impl_q_alt:
   "(P -*q Q) = (\<lambda>h. INF h': { h'. h ## h' \<and> P h'}. Q (h + h'))"
@@ -144,9 +121,6 @@ lemma Inf_zeroone: "P \<noteq> {} \<Longrightarrow> P \<subseteq> {0,1} \<Longri
  (*  sledgehammer *)
   by (smt Inf_le_Sup Inf_lower Inf_superset_mono Sup_empty Sup_subset_mono bot_ennreal cInf_singleton insertCI le_zero_eq linorder_not_less order_le_less subset_insert)
  
-
-
-lemma "(0::ennreal) \<le> 1"  by auto
 
 lemma emb_1: "emb P h = 1 \<longleftrightarrow> P h"
   by(auto simp: emb_def)
@@ -177,16 +151,21 @@ lemma sep_impl_q_rangezeroonetop: "((P -*q (emb Q)) h) \<in> {0,1,top}"
     by(auto simp: emb_def split: if_splits)
   done
 
+lemma inf_1_cuts: "a \<in> {0, 1, top} \<Longrightarrow> inf 1 a \<in> {0, 1::ennreal}"
+proof -
+  assume "a \<in> {0, 1, top}"
+  then have "a \<in> {bot, 1, top}"
+    using bot_ennreal by presburger
+  then have "inf 1 a \<in> {1, bot}"
+    using inf_bot_right inf_idem inf_top_right by blast
+  then show ?thesis
+    using bot_ennreal by auto
+qed
+
 lemma sep_impl_q_range: "inf 1 ((P -*q (emb Q)) h) \<in> {0,1}"  
-  using sep_impl_q_rangezeroonetop
-  by (smt inf.absorb2 inf.orderE inf_eq_top_iff insert_iff linorder_not_less order_le_less)  
+  apply(rule inf_1_cuts) by(rule sep_impl_q_rangezeroonetop)   
 
-lemma "{h'. h ## h' \<and> P h'} \<noteq> {} \<Longrightarrow>
-      (INF h':{h'. h ## h' \<and> P h'}. emb Q (h + h')) \<in> {0,1}"
-  oops
-
-
-lemma "(P  \<longrightarrow>* Q) h  \<longleftrightarrow> inf 1 ((P -*q (emb Q)) h)  = 1"
+lemma quant_wand_conservative: "(P  \<longrightarrow>* Q) h  \<longleftrightarrow> inf 1 (((emb P) -*qq (emb Q)) h)  = 1"
 proof - 
   (* rather ugly proof, DB's fault ;) *)
   fix h
@@ -211,7 +190,7 @@ proof -
   finally show "(P  \<longrightarrow>* Q) h \<longleftrightarrow> inf 1 ((P -*q (emb Q)) h) = 1" by simp
 qed 
 
-lemma star_conservative: "(P ** Q) h \<longleftrightarrow> ((emb P) **q (emb Q)) h = 1" 
+lemma quant_star_conservative: "(P ** Q) h \<longleftrightarrow> ((emb P) **q (emb Q)) h = 1" 
 proof -
   have "(P ** Q) h = (\<exists>xa y. xa ## y \<and> h = xa + y \<and> emb P xa = 1 \<and> emb Q y = 1)"
     unfolding sep_conj_def emb_1 by auto
@@ -222,14 +201,14 @@ proof -
       subgoal using sep_conj_q_leq1[unfolded sep_conj_q_def] by simp
       subgoal apply(rule Sup_upper) by force 
       done
-    subgoal  
+    subgoal
     proof (rule ccontr, goal_cases)
       case 1
       from 1(2) have "\<And>x y. (x,y) \<in> {(x,y) | x y. h = x + y \<and> x ## y} \<Longrightarrow> emb P x * emb Q y = 0 "
         apply auto  unfolding emb_def by(auto split: if_splits)  
-      with  1(1) 
-        show "False"  
-          by (smt Sup_le_iff le_zero_eq mem_Collect_eq not_one_le_zero)  
+      then have "Sup {emb P x * emb Q y |x y. h = x + y \<and> x ## y} \<le> 0"
+        apply(intro Sup_least) by auto
+      with 1(1) show "False" by simp 
     qed 
     done
   also have "\<dots> = (((emb P) **q (emb Q)) h = 1)" unfolding sep_conj_q_def by simp
@@ -249,44 +228,36 @@ proof (rule ext)
   have "(x **q (y **q z)) h    = (SUP (xa, ya):{(x, y) |x y. h = x + y \<and> x ## y}. x xa * (SUP (x, ya):{(x, y) |x y. ya = x + y \<and> x ## y}. y x * z ya))" 
     unfolding sep_conj_q_SUP by auto 
   also have "\<dots> = (SUP xa:{(x, y). h = x + y \<and> x ## y}. case xa of (xa, ya) \<Rightarrow> SUP i:{(x, y). ya = x + y \<and> x ## y}. (case i of (h21, h22) \<Rightarrow> x xa * y h21 * z h22))"
-    by(simp add: SUP_mult_left_ennreal prod.case_distrib mult.assoc)
- 
+    by(simp add: SUP_mult_left_ennreal prod.case_distrib mult.assoc) 
   also have "\<dots> = (SUP xa:{(x, y). h = x + y \<and> x ## y}. SUP i:{((fst xa),x, y)| x y . snd xa = x + y \<and> x ## y}. (case i of (b, h21, h22) \<Rightarrow> x b * y h21 * z h22))"
     apply(rule SUP_cong) apply simp
-    apply safe
-    apply(rule arg_cong[where f=Sup]) apply safe
-    subgoal by force 
-    subgoal  apply auto done
-    done
+    apply safe apply(rule Sup_cong) by force 
   also have "\<dots> = (SUP xa:{(h1, h2, h3). h = h1 + h2 + h3 \<and> h1 ## h2 + h3 \<and> h1 ## h2 \<and> h1 ## h3 \<and> h3 ## h2 }. case xa of (h1, h2, h3) \<Rightarrow> x h1 * y h2 * z h3)"
     apply(subst SUP_UNION[symmetric]) 
     apply(rule SUP_cong)
-    subgoal apply (auto simp: sep_add_ac dest: sep_disj_addD  )
-      subgoal  
-        by (metis  sep_add_assoc  sep_disj_addD1  sep_disj_addD2) 
-      done
-    apply auto done
+    subgoal
+      apply (auto simp: sep_add_ac dest: sep_disj_addD  ) 
+      by (metis sep_add_assoc sep_disj_addD1 sep_disj_addD2)  
+    by auto
   also have "\<dots> = (SUP xa:{(x, y). h = x + y \<and> x ## y}. SUP i:{(h1,h2, snd xa)| h1 h2 . fst xa = h1 + h2 \<and> h1 ## h2}. (case i of (h1, h2, h3) \<Rightarrow> x h1 * y h2 * z h3))"
     apply(subst SUP_UNION[symmetric]) 
     apply(rule SUP_cong)
-    subgoal apply (auto simp: sep_add_ac dest: sep_disj_addD )
+    subgoal
+      apply (auto simp: sep_add_ac dest: sep_disj_addD )
       subgoal   
         using  sep_disj_addI1  sep_disj_commuteI by blast   
       subgoal   
         using sep_disj_addI3 sep_disj_commuteI by blast   
       done
-    apply auto done
+    by auto 
   also have "\<dots> = (SUP xa:{(h12, h3). h = h12 + h3 \<and> h12 ## h3}. case xa of (h12, h3) \<Rightarrow> SUP h12:{(x, y). h12 = x + y \<and> x ## y}. (case h12 of (h1, h2) \<Rightarrow> (x h1 * y h2 * z h3)))"
     apply(rule SUP_cong) apply simp
     apply safe
-    apply(rule arg_cong[where f=Sup]) apply safe
-    subgoal by force 
-    subgoal by force 
-    done 
+    apply(rule Sup_cong) by force
   also have "\<dots> = ((x **q y) **q z) h"
     unfolding sep_conj_q_SUP apply  (auto simp:  SUP_mult_right_ennreal) 
     apply(rule SUP_cong) apply simp
-    apply auto apply(rule SUP_cong) by (auto simp: mult.assoc) 
+    apply safe apply(rule SUP_cong) by (auto simp: mult.assoc) 
   finally show "(x **q (y **q z)) h  = ((x **q y) **q z) h " .
 qed
 
@@ -339,10 +310,6 @@ lemma emp_neutral2 :
 
 lemmas emp_neutral = emp_neutral1 emp_neutral2
 
-
-thm emp_neutral
-
-
 lemma sep_conj_q_left_commute: "(P **q Q **q R) = (Q **q P **q R)"
   apply(subst  star_assoc)
   apply(subst  star_comm)
@@ -354,9 +321,7 @@ lemmas sep_conj_q_c = star_comm sep_conj_q_left_commute
 
 subsubsection \<open>(Sub)distributivity Laws\<close>
  
-term "Q * (R::_\<Rightarrow>ennreal)"
-
-lemma theorem_3_6:
+lemma theorem_3_6: 
   "(P **q (sup Q R)) = sup (P **q Q) (P **q R)"
   "(P **q (Q + R)) \<le> (P **q Q) + (P **q R)"
   "( (emb \<phi>) **q (Q * R)) \<le> ((emb \<phi>) **q Q) * ((emb \<phi>) **q R)"
@@ -368,85 +333,71 @@ proof -
   have supmax: "\<And>x y::ennreal. sup x y = max x y" 
     by (simp add: antisym)
 
-  have "\<And> a b c. (a::ennreal) * max b c = max (a*b) (a*c)" 
-    unfolding max_def apply auto  
-     apply (auto simp add: mult_left_mono) 
-    by (smt ennreal_mult_less_top ennreal_mult_strict_right_mono ennreal_mult_top ennreal_zero_less_mult_iff le_less mult.commute not_less top.extremum)
- 
-  have sup_times_distrib: "\<And> a b c. (a::ennreal) * sup b c = sup (a*b) (a*c)" 
-    unfolding supmax by fact
+  have *: "\<And> a b c. (a::ennreal) * max b c = max (a*b) (a*c)"  
+    apply (auto simp add: max_def mult_left_mono) 
+    apply(rule antisym) 
+    by (simp_all add: mult_left_mono) 
 
-      
+  have sup_times_distrib: "\<And> a b c. (a::ennreal) * sup b c = sup (a*b) (a*c)" 
+    unfolding supmax by (fact *)
+
+
   { fix h
-  have "(P **q (sup Q R)) h = Sup {P x * sup Q R y |x y. h = x + y \<and> x ## y}"
-  
-    unfolding sep_conj_q_def by simp
-  also have "\<dots> = Sup {P x * sup (Q y) (R y) |x y. h = x + y \<and> x ## y}"
-    by simp
-  also have "\<dots> = Sup { sup (P x * Q y) (P x * R y) |x y. h = x + y \<and> x ## y}"
-    apply(subst  sup_times_distrib)  by simp
-  also have "\<dots> = (SUP x:{(x, y). h = x + y \<and> x ## y}. case x of (x,y) \<Rightarrow> sup (P x * Q y) (P x * R y))" 
-    apply (rule arg_cong[where f=Sup]) by auto
-  also have "\<dots> = (SUP x:{(x, y). h = x + y \<and> x ## y}. sup (P (fst x) * Q (snd x)) (P (fst x) * R (snd x)))"
-    apply (rule arg_cong[where f=Sup])  
-    by (meson prod.case_eq_if)    
-  also have "\<dots> = sup (SUP x:{(x, y). h = x + y \<and> x ## y}. P (fst x) * Q (snd x))
+    have "(P **q (sup Q R)) h = Sup {P x * sup Q R y |x y. h = x + y \<and> x ## y}"
+      unfolding sep_conj_q_def by simp
+    also have "\<dots> = Sup {P x * sup (Q y) (R y) |x y. h = x + y \<and> x ## y}"
+      by simp
+    also have "\<dots> = Sup { sup (P x * Q y) (P x * R y) |x y. h = x + y \<and> x ## y}"
+      apply(subst  sup_times_distrib)  by simp
+    also have "\<dots> = (SUP x:{(x, y). h = x + y \<and> x ## y}. case x of (x,y) \<Rightarrow> sup (P x * Q y) (P x * R y))" 
+      apply (rule arg_cong[where f=Sup]) by auto
+    also have "\<dots> = (SUP x:{(x, y). h = x + y \<and> x ## y}. sup (P (fst x) * Q (snd x)) (P (fst x) * R (snd x)))"
+      apply (rule arg_cong[where f=Sup])  
+      by (meson prod.case_eq_if)    
+    also have "\<dots> = sup (SUP x:{(x, y). h = x + y \<and> x ## y}. P (fst x) * Q (snd x))
      (SUP x:{(x, y). h = x + y \<and> x ## y}. P (fst x) * R (snd x))"
-    apply(subst SUP_sup_distrib[symmetric])
-    subgoal apply auto apply(rule exI[where x=h])  apply(rule exI[where x=0]) by auto
-    subgoal by auto
-    subgoal by auto
-    subgoal by auto
-    done 
-  also have "\<dots> = sup (P **q Q) (P **q R) h"
-    unfolding sep_conj_q_alt apply simp
-     
-    by (metis (mono_tags, lifting) SUP_cong prod.case_eq_if)  
-  finally have "(P **q sup Q R) h = sup (P **q Q) (P **q R) h ".
-}
+      apply(subst SUP_sup_distrib[symmetric]) 
+      subgoal apply auto apply(rule exI[where x=h])  apply(rule exI[where x=0]) by auto
+      by auto
+    also have "\<dots> = sup (P **q Q) (P **q R) h"
+      unfolding sep_conj_q_alt apply simp
+      by (metis (mono_tags, lifting) SUP_cong prod.case_eq_if)  
+    finally have "(P **q sup Q R) h = sup (P **q Q) (P **q R) h ".
+  }
   then show "(P **q (sup Q R)) = sup (P **q Q) (P **q R)" by auto
 
 next
   show "(P **q Q + R) \<le> (P **q Q) + (P **q R)" 
-  proof -
-
-    have brr: "\<And>S. \<And>f g::_\<Rightarrow>ennreal. (SUP x:S. f x + g x) \<le> (SUP x:S. f x) + (SUP x:S. g x)"
-      by (simp add: SUP_least SUP_upper add_mono)
-
-    have "\<And>a b c :: ennreal. a * (b + c) = a * b + a * c"
-      by (simp add: algebra_simps) 
-    have fff: "\<And>a b c d :: ennreal. a=c \<Longrightarrow> b=d \<Longrightarrow> a + b = c + d"
-      by (simp add: algebra_simps) 
-    { fix h
-      have "(P **q (Q + R)) h = Sup {P x * (Q + R) y |x y. h = x + y \<and> x ## y}"
-
-        unfolding sep_conj_q_def by simp
-      also have "\<dots> = Sup { (P x * Q y) + (P x * R y) |x y. h = x + y \<and> x ## y}"
-        unfolding plus_fun_def by(simp add: algebra_simps) 
-      also have "\<dots> = (SUP (x,y):{(x,y)|x y. h = x + y \<and> x ## y}. (P x * Q y) + (P x * R y) )"
-        apply(rule arg_cong[where f=Sup]) by auto  
-      also have "\<dots> = (SUP x:{(x,y)|x y. h = x + y \<and> x ## y}. (P (fst x) * Q (snd x)) + (P (fst x) * R (snd x)) )"
-        apply(rule arg_cong[where f=Sup]) by force    
-      also have "\<dots> \<le> (SUP x:{(x,y)|x y. h = x + y \<and> x ## y}. P (fst x) * Q (snd x) )
+  proof (rule le_funI)
+    fix h
+    have "(P **q (Q + R)) h = (SUP (x,y):{(x,y)|x y. h = x + y \<and> x ## y}. (P x * Q y) + (P x * R y) )"
+      unfolding sep_conj_q_alt  by(simp add: algebra_simps) 
+    also have "\<dots> = (SUP x:{(x,y)|x y. h = x + y \<and> x ## y}. (P (fst x) * Q (snd x)) + (P (fst x) * R (snd x)) )"
+      apply(rule Sup_cong) by force    
+    also have "\<dots> \<le> (SUP x:{(x,y)|x y. h = x + y \<and> x ## y}. P (fst x) * Q (snd x) )
                     + (SUP x:{(x,y)|x y. h = x + y \<and> x ## y}. P (fst x) * R (snd x) )" 
-        by (rule brr)
-          (*
-  also have "\<dots> = Sup { (P x * Q y) |x y. h = x + y \<and> x ## y} + Sup { P x * R y |x y. h = x + y \<and> x ## y}"
-    apply(rule fff)
-    subgoal apply(rule arg_cong[where f=Sup]) by force 
-    subgoal apply(rule arg_cong[where f=Sup]) by force    
-    done *)
-      also have "\<dots> = ((P **q Q) + (P **q R)) h"
-        unfolding sep_conj_q_alt apply simp     
-        by (metis (mono_tags, lifting) SUP_cong prod.case_eq_if)  
-      finally have "(P **q (Q + R)) h \<le> ((P **q Q) + (P **q R)) h " .
-    }
-
-    then show ?thesis by (rule le_funI)
+      by (rule SUP_plus_subdistrib)
+    also have "\<dots> = ((P **q Q) + (P **q R)) h"
+      unfolding sep_conj_q_alt apply simp     
+      by (metis (mono_tags, lifting) SUP_cong prod.case_eq_if)  
+    finally show "(P **q (Q + R)) h \<le> ((P **q Q) + (P **q R)) h " .
   qed
 next
   show "( (emb \<phi>) **q (Q * R)) \<le> ((emb \<phi>) **q Q) * ((emb \<phi>) **q R)"
-    sorry
+  proof (rule le_funI)
+    fix h
+    have "( (emb \<phi>) **q (Q * R)) h  =  (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. emb \<phi> h1 * (Q * R) h2)" unfolding sep_conj_q_alt by simp
+    also have "... = (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. emb \<phi> h1 * Q h2 * R h2)" apply (rule SUP_cong) 
+       apply simp
+      by (auto simp: mult.assoc)
+    also have "... =   (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. (emb \<phi> h1 * Q h2) * ( emb \<phi> h1  * R h2))"
+      apply (subst (1) emb_squared)
+      by (simp add: mult_ac)
+    also have "... \<le> (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. (emb \<phi> h1 * Q h2)) * (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}.  ( emb \<phi> h1  * R h2))"
+      by (rule SUP_times_distrib2)
+    also have "... = (((emb \<phi>) **q Q) * ((emb \<phi>) **q R)) h"  by (simp add: local.sep_conj_q_alt)
+    finally show "( (emb \<phi>) **q (Q * R)) h \<le> (((emb \<phi>) **q Q) * ((emb \<phi>) **q R)) h".
+  qed
 qed
 
 
@@ -456,23 +407,9 @@ lemma ennreal_supmax: "\<And>x y::ennreal. sup x y = max x y"
   apply (rule antisym) by auto   
 
 
-lemma "emb (X or Y) = (sup (emb X) (emb Y))" 
+lemma emb_or: "emb (X or Y) = (sup (emb X) (emb Y))" 
   unfolding emb_def apply(rule ext) unfolding  sup_fun_def apply auto
   by(auto simp add: ennreal_supmax max_def) 
-
- 
-(*
-lemma "((emb X) **q (emb Y)) = 0 \<Longrightarrow> emb (X or Y) = (emb X) + (emb Y)" 
-  unfolding emb_def apply(rule ext) unfolding  plus_fun_def sep_conj_q_alt apply auto
-  subgoal for x proof (goal_cases)
-    case 1
-    from 1(2,3) have "\<not> (\<lambda>h. SUP (x, y):{(x, y). h = x + y \<and> x ## y}.   (if X x then 1 else 0) * (if Y y then 1::ennreal else 0)) \<le> (\<lambda>_.0)"
-      apply(simp add: le_fun_def) apply(rule exI[where x=x])
-      apply auto
-      apply(intro SUP_upper2[where i="(x, x)"]) try0
-    then show ?case sorry
-  qed *)
-
 
 
 subsubsection \<open>monotonicity of @{term "( **q)"}\<close>
@@ -954,7 +891,7 @@ proof (rule le_funI)
     apply(rule SUP_cong) by(auto simp: sizeadd distrib_left) 
   also have "\<dots> \<le> (SUP (h1, h2):{(x, y). h = x + y \<and> x ## y}. X h1 * Y h2 * Size h1) +
     (SUP (h1, h2):{(x, y). h = x + y \<and> x ## y}. X h1 * Y h2 * Size h2)" (is "_ \<le> ?L + ?R")
-    by (rule SUP_plus_subdistrib)
+    by (rule SUP_plus_subdistrib2)
   also 
   have L: "?L = (SUP (x, y):{(x, y). h = x + y \<and> x ## y}. X x * Size x * Y y)"
     apply (rule SUP_cong) by (auto simp: mult_ac) 
