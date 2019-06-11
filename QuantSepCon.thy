@@ -291,6 +291,8 @@ lemma sep_conj_q_SUP: "(P **q Q) = (\<lambda>h. (SUP i:{(x,y)| x y. h=x+y \<and>
 
 
 
+
+
 subsection \<open>Quantitative Separating Implication - Magic Wand\<close>
 
 definition
@@ -307,7 +309,43 @@ abbreviation sep_impl_q (infixr "-*q" 35) where   "(P -*q Q) \<equiv> (embc P -*
 
 lemma "x/ (\<infinity>::ennreal) = g" apply simp oops
 
- 
+
+
+
+definition
+  sep_impl_qq3 :: "('a \<Rightarrow> ennreal) \<Rightarrow> ('a \<Rightarrow> ennreal) \<Rightarrow> ('a \<Rightarrow> ennreal)"  
+  where
+  "sep_impl_qq3 P Q \<equiv> \<lambda>h. INF h': { h'. h ## h' \<and> P(h') > 0 \<and> (P h' < \<infinity> \<or> Q (h+h') < \<infinity>)}. Q (h + h') / P(h')"
+
+abbreviation sep_impl_q3  where   "sep_impl_q3 P Q \<equiv>  sep_impl_qq3 (emb P) Q" 
+
+
+lemma sep_impl_q_alt:
+  "sep_impl_q3 P Q = (\<lambda>h. INF h': { h'. h ## h' \<and> P h'}. Q (h + h'))"
+  apply (rule ext)
+  unfolding sep_impl_qq3_def emb_def
+  apply (rule INF_cong)
+   apply (auto simp:ennreal_div_one)
+done
+
+definition
+  sep_impl_qq2 :: "('a \<Rightarrow> ennreal) \<Rightarrow> ('a \<Rightarrow> ennreal) \<Rightarrow> ('a \<Rightarrow> ennreal)" 
+  where
+  "sep_impl_qq2 P Q \<equiv> \<lambda>h. INF h': { h'. h ## h' \<and>   0 <  P(h') \<and> (P h' < \<infinity> \<or> Q (h+h') < \<infinity>)}. Q (h + h') / P(h')"
+
+lemma "sep_impl_qq3 = sep_impl_qq2"
+  unfolding sep_impl_qq2_def sep_impl_qq3_def by auto
+
+abbreviation sep_impl_q2   where   "sep_impl_q2 P Q \<equiv> sep_impl_qq2 (embc P) Q" 
+
+lemma sep_impl_q_alt:
+  "(sep_impl_q2 P Q) = (\<lambda>h. INF h': { h'. h ## h' \<and> P h'}. Q (h + h'))"
+  apply (rule ext)
+  unfolding sep_impl_qq2_def embc_def
+  apply (rule INF_cong)
+   apply (auto simp:ennreal_div_one)
+  oops 
+
 
 lemma 
   assumes "P = (\<lambda>_. True)"
@@ -315,8 +353,85 @@ lemma
   "(P -*q Q) = (\<lambda>h. INF h': { h'. h ## h' \<and> P h'}. Q (h + h'))"
   apply (rule ext)
   unfolding sep_impl_qq_def embc_def
-  using assms apply simp
+  using assms apply simp oops
 
+
+lemma sep_impl_q_alt_general:
+  fixes  Q :: "'a \<Rightarrow> 'b::{inverse,SUP_mult_left}"
+  assumes AA: "\<And>x::'b. x / top = x"   (* gilt für domain    top  *    /
+                                                    [0,1]    1    *   /   
+                                                   ennreal   0    +   -       *)  
+  and BB: "\<And>x::'b. x / bot = top"    
+  and CC: "bot < (top::'b)" 
+  shows 
+  "(P -*q Q) = (\<lambda>h. INF h': { h'. h ## h' \<and> P h'}. Q (h + h'))"
+proof  (rule ext)
+  fix h
+  have T: "{h'. h ## h' \<and> ((bot::'b) < embc P h' \<or> (bot::'b) < Q (h + h')) \<and> (embc P h' < (top::'b) \<or> Q (h + h') < (top::'b))}
+      = {h'. h ## h' \<and>  (bot::'b) < embc P h' \<and> (embc P h' < (top::'b) \<or> Q (h + h') < top)}
+       \<union>  {h'. h ## h' \<and>(bot::'b) = embc P h' \<and> (bot::'b) < Q (h + h') \<and> (embc P h' < (top::'b) \<or> Q (h + h') < (top::'b))}" 
+      using bot.not_eq_extremum by fastforce   
+
+  {
+    assume invtop: "\<And>x::'b. x / top = bot"   (* gilt für domain    top  *    /
+                                                          [0,1]    1    *   /   NOOTTT
+                                                        ennreal   0    +   -    NOOTTT 
+                                                        ennreal   inf   *  /     *)
+    
+  have "(INF h':{h'. h ## h' \<and> (bot::'b) < embc P h' \<and> (embc P h' < (top::'b) \<or> Q (h + h') < (top::'b))}. Q (h + h') / embc P h')
+      = (INF x:{h'. (P h' \<longrightarrow> h ## h' \<and> (bot::'b) < top \<and> Q (h + h') < top) \<and> P h'}. (bot::'b))"
+    unfolding embc_def apply simp 
+    using invtop by simp
+  also have "\<dots> = (if {h'. (P h' \<longrightarrow> h ## h' \<and> (bot::'b) < top \<and> Q (h + h') < top) \<and> P h'}={} then top else bot)" by auto
+  also have "\<dots> = (if (\<exists>h'. h ## h' \<and> (bot::'b) < top \<and> Q (h + h') < top  \<and> P h') then bot else top)" by auto
+  finally have "(INF h':{h'. h ## h' \<and> (bot::'b) < embc P h' \<and> (embc P h' < (top::'b) \<or> Q (h + h') < (top::'b))}. Q (h + h') / embc P h')
+      = (if (\<exists>h'. h ## h' \<and> (bot::'b) < top \<and> Q (h + h') < top  \<and> P h') then bot else top)" by auto
+}
+
+
+    have 1: "(INF h':{h'. h ## h' \<and> (bot::'b) < embc P h' \<and> (embc P h' < (top::'b) \<or> Q (h + h') < (top::'b))}. Q (h + h') / embc P h')
+      = (INF x:{h'.  h ## h' \<and> (bot::'b) < top \<and> Q (h + h') < top \<and> P h'}. Q (h + x))"
+    unfolding embc_def apply simp 
+    using AA apply simp apply(rule INF_cong) apply auto done 
+
+  have "(\<exists>h'. h ## h' \<and> (bot::'b) < top \<and> Q (h + h') < top  \<and> P h') \<Longrightarrow> (INF h': { h'. h ## h' \<and> P h'}. Q (h + h')) < top"
+    apply safe subgoal for h' 
+      apply(rule order.strict_trans1)
+       apply(rule INF_lower[where i=h']) by auto
+    done
+  
+  have "~(\<exists>h'. h ## h' \<and> (bot::'b) < top \<and> Q (h + h') < top  \<and> P h') \<Longrightarrow> (INF h': { h'. h ## h' \<and> P h'}. Q (h + h')) = top"
+    apply auto  
+    by (metis Inf_UNIV Inf_top_conv(2) UNIV_I top.not_eq_extremum)  
+ 
+  have 2: "(INF h':{h'. h ## h' \<and> (bot::'b) = embc P h' \<and> (bot::'b) < Q (h + h')  \<and> (embc P h' < (top::'b) \<or> Q (h + h') < (top::'b))}. Q (h + h') / embc P h')
+      = top" 
+    unfolding embc_def apply auto
+    using BB by simp_all 
+  
+
+  have F: "{ h'. h ## h' \<and> P h'} = { h'. h ## h' \<and> P h' \<and> Q (h + h') = top} \<union> { h'. h ## h' \<and> P h' \<and> Q (h + h') < top}"
+    using top.not_eq_extremum by blast
+
+
+  have 3: "(INF h':{h'. h ## h' \<and> P h' \<and> Q (h + h') = top}. Q (h + h')) = top"
+    by auto
+ 
+  have "(P -*q Q) h = inf (INF h':{h'. h ## h' \<and> (bot::'b) < embc P h' \<and> (embc P h' < (top::'b) \<or> Q (h + h') < (top::'b))}. Q (h + h') / embc P h')
+     (INF h':{h'. h ## h' \<and> (bot::'b) = embc P h'\<and> (bot::'b) < Q (h + h') \<and> (embc P h' < (top::'b) \<or> Q (h + h') < (top::'b))}. Q (h + h') / embc P h')"
+    unfolding sep_impl_qq_def  
+    unfolding T
+    unfolding INF_union by simp
+  also have "\<dots>  = (INF x:{h'.  h ## h' \<and> (bot::'b) < top \<and> Q (h + h') < top \<and> P h'}. Q (h + x))"
+    unfolding 1 2 by simp
+  also have "\<dots> = ( INF h': { h'. h ## h' \<and> P h'}. Q (h + h'))"
+    using CC apply simp unfolding F 
+    unfolding INF_union unfolding 3 apply simp
+    apply(rule INF_cong) by auto
+  finally show "(P -*q Q) h = (INF h':{h'. h ## h' \<and> P h'}. Q (h + h'))" .
+qed
+
+  oops
 lemma sep_impl_q_alt:
   "(P -*q Q) = (\<lambda>h. INF h': { h'. h ## h' \<and> P h'}. Q (h + h'))"
   apply (rule ext)
