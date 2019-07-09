@@ -320,7 +320,8 @@ locale quant_sep_con =  comm_monoid oper neutr
          AA: "\<And>x::'b. x \<^bold>div \<^bold>1 = x"   (* gilt für domain    top  *    /  1
                                                     [0,1]     1    *   /   1
                                                    ennreal    0    +   -   0  *)  
-  and BB: "\<And>x::'b. x > bot \<Longrightarrow> x \<^bold>div bot = top"    
+  and BB: "\<And>x::'b. x > bot \<Longrightarrow> x \<^bold>div bot = top"   
+  and BB': "\<And>b::'b. b \<^bold>div bot < top \<longleftrightarrow> b = bot" 
   and DD: "\<And>x. x \<^bold>* bot = bot"   
   and FF: "bot < \<^bold>1" 
 (*  and GG: "\<And>x::'b. x < top \<Longrightarrow> x \<^bold>div top = bot"    *)
@@ -422,23 +423,108 @@ interpretation FULL: quant_sep_con   "( * )" "1::ennreal"  "(/)"
     by (simp add: bot_ennreal)  
   subgoal 
     by (simp add: bot_ennreal)  
+  subgoal 
+    by (simp add: bot_ennreal)  
   subgoal     
     using SUP_mult_left_ennreal[where f=id] by simp 
   subgoal 
-    apply (auto simp: mult_mono) sorry
+    by (auto simp: mult_mono)  
   subgoal
-    by (simp add: divide_right_mono_ennreal)
-      
+    by (simp add: divide_right_mono_ennreal)      
   subgoal for a b c
     using ennreal_div_antimono by simp
   subgoal using ennreal_top_divide by simp
   done
-
  
-datatype UnitInterval = ZOI ennreal 
 
-interpretation PROB: quant_sep_con  "( * )"  "(/)"   "1::UnitInterval" 
-  apply standard  .
+typ ennreal
+
+typedef unitinterval = "{x :: ereal. 0 \<le> x \<and> x \<le> 1}"
+  morphisms UI2real real2UI'
+  by auto
+
+
+definition "real2UI x = real2UI' (max 0 (min x 1))"
+                           
+lemma unitinterval_range: "real2UI ` {0..1} = UNIV"
+proof -
+  have "\<exists>y\<in>{0..1}. x = real2UI y" for x
+    by (cases x)  (auto simp: real2UI_def max_absorb2 min_absorb1)
+  then show ?thesis
+    by (auto simp: image_iff Bex_def)
+qed
+
+lemma type_definition_unitinterval': "type_definition UI2real real2UI {x. 0 \<le> x \<and> x \<le> 1}"
+  using type_definition_unitinterval
+  by (auto simp: type_definition_def real2UI_def max_absorb2 min_absorb1)
+
+setup_lifting type_definition_unitinterval'
+
+declare [[coercion real2UI]]
+
+instantiation unitinterval :: complete_linorder
+begin
+
+lift_definition top_unitinterval :: unitinterval is 1 by simp
+lift_definition bot_unitinterval :: unitinterval is 0 by simp
+lift_definition sup_unitinterval :: "unitinterval \<Rightarrow> unitinterval \<Rightarrow> unitinterval" is sup by (auto simp: max_def)
+lift_definition inf_unitinterval :: "unitinterval \<Rightarrow> unitinterval \<Rightarrow> unitinterval" is inf by (auto simp: min_def)
+
+lift_definition Inf_unitinterval :: "unitinterval set \<Rightarrow> unitinterval" is "inf 1 \<circ> Inf"
+  by (auto intro: Inf_greatest)  
+
+lift_definition Sup_unitinterval :: "unitinterval set \<Rightarrow> unitinterval" is "sup 0 \<circ> Sup"
+  by (auto intro: Sup_least) 
+
+lift_definition less_eq_unitinterval :: "unitinterval \<Rightarrow> unitinterval \<Rightarrow> bool" is "(\<le>)" .
+lift_definition less_unitinterval :: "unitinterval \<Rightarrow> unitinterval \<Rightarrow> bool" is "(<)" .
+
+instance
+  apply ( standard ; transfer)
+  by ( auto simp: le_Inf_iff min_def Inf_lower Inf_greatest Sup_upper Sup_least le_max_iff_disj max.absorb1)+
+ 
+end
+ 
+lift_definition one_unitinterval :: unitinterval is 1 by simp
+lift_definition zero_unitinterval :: unitinterval is 0 by simp 
+lift_definition times_unitinterval :: "unitinterval \<Rightarrow> unitinterval \<Rightarrow> unitinterval" is "( * )"
+    apply auto  
+  by (metis ereal_mult_left_mono mult.right_neutral order_trans) 
+lift_definition divides_unitinterval :: "unitinterval \<Rightarrow> unitinterval \<Rightarrow> unitinterval" is "\<lambda>a b. min (a / b) (1)"
+  by auto   
+
+lemma mm: "c \<ge> 0 \<Longrightarrow> c \<le> 1 \<Longrightarrow> c * max a b = max (c*a) (c*(b::ereal))"
+  unfolding max_def apply auto 
+  subgoal  
+    by (simp add: ereal_mult_left_mono) 
+  subgoal  
+    by (simp add: antisym ereal_mult_left_mono) 
+  done
+
+interpretation PROB: quant_sep_con  "times_unitinterval"   "one_unitinterval"   "divides_unitinterval"
+  apply (standard; transfer)
+              apply (auto simp: algebra_simps )
+  subgoal  
+    by (simp add: min_absorb1) 
+  subgoal unfolding divide_ereal_def by auto 
+  subgoal  
+    using \<open>\<And>x. \<lbrakk>0 < x; 0 \<le> x; x \<le> 1\<rbrakk> \<Longrightarrow> min (x / 0) 1 = 1\<close> antisym_conv2 min.cobounded2 by blast  
+  subgoal by(simp add: min_def)
+  subgoal for c A apply(simp add: mm)
+    apply(cases "A={}") 
+    subgoal apply auto    
+      by (metis ereal_mult_zero max_bot2 mm)  
+    subgoal apply(subst SUP_ereal_mult_left[where f=id, simplified]) by auto
+    done
+  subgoal                                         
+    by (metis eq_onp_same_args ereal_0_le_mult less_eq_ennreal.abs_eq mult_mono' times_ennreal.abs_eq zero_smallest)  
+  subgoal  
+    by (metis \<open>\<And>x. \<lbrakk>0 < x; 0 \<le> x; x \<le> 1\<rbrakk> \<Longrightarrow> min (x / 0) 1 = 1\<close> antisym_conv2 ereal_divide_right_mono min.absorb_iff2 min.coboundedI1 min_def)
+  subgoal  
+    by (simp add: divide_ereal_def ereal_inverse_antimono ereal_mult_left_mono min.coboundedI1)  
+  subgoal 
+    by (metis \<open>\<And>c b a. \<lbrakk>c \<le> b; 0 \<le> a; a \<le> 1; 0 \<le> b; b \<le> 1; 0 \<le> c; c \<le> 1\<rbrakk> \<Longrightarrow> min (a / b) 1 \<le> a / c\<close> ereal_divide_one min.absorb2 order_refl zero_less_one_ereal)
+  done 
  
 
 
@@ -612,8 +698,22 @@ proof  (rule ext)
   have 2: "(INF h':{h'. h ## h' \<and> (bot::'b) = emb P h' \<and> (bot::'b) < Q (h + h')  \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}. Q (h + h') \<^bold>div emb P h')
       = top" 
     unfolding emb_def apply auto
+    using FF apply simp_all
     using BB by simp_all 
-  
+
+
+  have 3: "(INF x:{h'. h ## h' \<and> Q (h + h') < top \<and> P h'}. Q (h + x))
+    \<le> (INF h':{h'. h ## h' \<and> (bot::'b) = emb P h' \<and> (bot::'b) < Q (h + h')  \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}. Q (h + h') \<^bold>div emb P h')
+   "
+    apply(rule INF_mono_my)
+    apply auto subgoal for h' apply(rule exI[where x=h'])
+      using FF apply(auto simp: emb_def split: if_splits) 
+      using BB' by simp 
+    subgoal for h'  apply(rule exI[where x=h'])
+      using FF apply(auto simp: emb_def split: if_splits)   
+      using BB' by simp 
+    done
+
 
   have F: "{ h'. h ## h' \<and> P h'} = { h'. h ## h' \<and> P h' \<and> Q (h + h') = top} \<union> { h'. h ## h' \<and> P h' \<and> Q (h + h') < top}"
     using top.not_eq_extremum by blast
@@ -621,14 +721,17 @@ proof  (rule ext)
 
   have 3: "(INF h':{h'. h ## h' \<and> P h' \<and> Q (h + h') = top}. Q (h + h')) = top"
     by auto
- 
+
+  have "\<And>a b :: 'c::{complete_lattice}. a \<le> b \<Longrightarrow> inf a b = a"  
+    by (simp add: le_iff_inf)
+
   have "(P -*q Q) h = inf (INF h':{h'. h ## h' \<and> (bot::'b) < emb P h' \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}. Q (h + h') \<^bold>div emb P h')
      (INF h':{h'. h ## h' \<and> (bot::'b) = emb P h'\<and> (bot::'b) < Q (h + h') \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}. Q (h + h') \<^bold>div emb P h')"
     unfolding sep_impl_qq_def  
     unfolding T
     unfolding INF_union by simp
   also have "\<dots>  = (INF x:{h'.  h ## h'  \<and> Q (h + h') < top \<and> P h'}. Q (h + x))"
-    unfolding 1 2 by simp
+    unfolding 1  by simp
   also have "\<dots> = ( INF h': { h'. h ## h' \<and> P h'}. Q (h + h'))"
       unfolding F 
     unfolding INF_union unfolding 3 apply simp
@@ -1324,7 +1427,7 @@ lemma sep_impl_q_antimonoL:
   unfolding sep_impl_qq_def
   apply(rule le_funI)
 
-  apply(rule INF_mono_my)   (* TODO: I think one looses here already ! *)
+  apply(rule INF_mono_my)   
 
   subgoal for  h h'  
     apply(rule bexI[where x=h'])  apply simp
