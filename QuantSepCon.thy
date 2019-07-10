@@ -8,12 +8,114 @@ theory QuantSepCon
   "Sep_Algebra_Add"
  "Separation_Algebra.Separation_Algebra" "HOL-Library.Extended_Nat"
   "HOL-Library.Extended_Nonnegative_Real" 
-
-"Median_Of_Medians_Selection.Median_Of_Medians_Selection"
-
+ 
+                
 begin 
 
 section \<open>Misc\<close>
+
+
+
+subsection \<open>The dual order type\<close>
+
+text \<open>
+  The following type is a copy of a given ordered base type, but with the ordering reversed.
+  This will be useful later because we can do some of our reasoning simply by symmetry.
+\<close>
+typedef 'a dual_ord = "UNIV :: 'a set" morphisms of_dual_ord to_dual_ord
+  by auto
+
+setup_lifting type_definition_dual_ord
+
+instantiation dual_ord :: (ord) ord
+begin
+
+lift_definition less_eq_dual_ord :: "'a dual_ord \<Rightarrow> 'a dual_ord \<Rightarrow> bool" is
+  "\<lambda>a b :: 'a. a \<ge> b" .
+
+lift_definition less_dual_ord :: "'a dual_ord \<Rightarrow> 'a dual_ord \<Rightarrow> bool" is
+  "\<lambda>a b :: 'a. a > b" .
+
+instance ..
+end
+
+
+instantiation "dual_ord" :: (Inf) Sup
+begin
+lift_definition Sup_dual_ord :: "('a dual_ord) set \<Rightarrow> 'a dual_ord" is
+  "\<lambda>A :: 'a set. Inf A" .
+instance ..
+end
+
+instantiation "dual_ord" :: (Sup) Inf
+begin
+lift_definition Inf_dual_ord :: "('a dual_ord) set \<Rightarrow> 'a dual_ord" is
+  "\<lambda>A :: 'a set. Sup A" .
+instance ..
+end
+
+
+instantiation "dual_ord" :: (sup) inf
+begin
+lift_definition inf_dual_ord :: "('a dual_ord)   \<Rightarrow> 'a dual_ord \<Rightarrow> 'a dual_ord" is
+  "\<lambda>a b :: 'a  . sup a b" .
+instance ..
+end
+
+instantiation "dual_ord" :: (inf) sup
+begin
+lift_definition sup_dual_ord :: "('a dual_ord)   \<Rightarrow> 'a dual_ord \<Rightarrow> 'a dual_ord" is
+  "\<lambda>a b :: 'a  . inf a b" .
+instance ..
+end
+
+(*
+instance dual_ord :: (preorder) preorder
+  by standard (transfer; force simp: less_le_not_le intro: order_trans)+
+
+instance dual_ord :: (linorder) linorder
+  by standard (transfer; force simp: not_le)+ *)
+
+instantiation "dual_ord" :: (complete_lattice) complete_lattice
+begin
+
+lift_definition bot_dual_ord :: "('a dual_ord)" is top .
+lift_definition top_dual_ord :: "('a dual_ord)" is bot .
+
+instance
+  by (standard) (transfer; auto intro: Sup_upper Sup_least Inf_lower Inf_greatest)+
+end
+
+
+instantiation "dual_ord" :: (plus) plus
+begin
+
+lift_definition plus_dual_ord :: "('a dual_ord) \<Rightarrow> ('a dual_ord) \<Rightarrow> ('a dual_ord)" is plus . 
+
+instance .. 
+end
+
+instantiation "dual_ord" :: (minus) minus
+begin
+
+lift_definition minus_dual_ord :: "('a dual_ord) \<Rightarrow> ('a dual_ord) \<Rightarrow> ('a dual_ord)" is minus . 
+
+instance .. 
+end
+
+instantiation "dual_ord" :: (zero) zero
+begin
+
+lift_definition zero_dual_ord :: "('a dual_ord)" is 0 .  
+
+instance .. 
+end
+
+
+
+typ "ennreal dual_ord"
+
+
 
 
 subsection \<open>stuff about complete lattices:\<close>
@@ -75,34 +177,6 @@ lemma SUP_plus_subdistrib2:
 term sup_continuous
 thm mult_mono
 
-class nogoodname = bot + top + times +
-  assumes bot_squared: "bot * bot = bot"     
-    and  top_squared: "top * top = top"
-
-
-class nonnegative = zero + order +
-  assumes zero_smallest: "\<And>x::'a. 0 \<le> x"
-
-instance ennreal :: nonnegative
-  apply(standard) by auto
-
-
-lemma SUP_times_distrib: "(SUP x:A. f x * g x::ennreal) \<le> (SUP x:A. f x) * (SUP x:A. g x)"
-      by (simp add: SUP_least SUP_upper mult_mono)
-
-lemma SUP_times_distrib2: "(SUP (x,y):A. f x y * g x y::ennreal) \<le> (SUP (x, y):A. f x y) * (SUP (x, y):A. g x y)" 
-  apply(rule Sup_least) apply auto 
-  apply(rule mult_mono) by(auto intro: SUP_upper2)  
-
-
-lemma SUP_times_distrib2_general:
-  fixes g :: "_\<Rightarrow>_\<Rightarrow>'b::{complete_lattice,ordered_semiring, nonnegative}"
-  shows "(SUP (x,y):A. f x y * g x y) \<le> (SUP (x, y):A. f x y) * (SUP (x, y):A. g x y)" 
-  apply(rule SUP_least)
-  apply auto apply(rule mult_mono)
-      by (auto intro: SUP_upper2 simp: zero_smallest)
-
-
 text \<open>enable multiplication on functions\<close>
 
 instance "fun" :: (type,zero) zero
@@ -142,214 +216,35 @@ lemma embc_squared:
 section \<open>Quantitative Separating Connectives\<close>
 
 
-class divide_right_mono = inverse + order + 
-  assumes divide_right_mono_general: "\<And>a b c::'a. a \<le> b \<Longrightarrow> a / c \<le> b / c" 
-
-class SUP_mult_left = complete_lattice + times +
-  assumes SUP_mult_left: "c * (SUP i:I. f i) = (SUP i:I. c * f i :: 'a)"
-begin
-
-lemma   SUP_mult_right: "(SUP i:I. f i) * c = (SUP i:I. f i * c :: 'a)"
-  sorry
-
-end
-
-instance ennreal :: SUP_mult_left
-  apply standard apply(rule SUP_mult_left_ennreal) .
-
-thm SUP_mult_left_ennreal
-
-
-datatype ennreal_inv = E (thee: ennreal)
-
-
-lemma INF_mult_left_ennreal: "(INF xa:I. x * f xa :: ennreal ) = x * (INF x:I. f x)"
-   
-  sorry
- 
-(*
-lemma INF_ennreal_add_const':
-  fixes f g :: "_ \<Rightarrow> ennreal" 
-  shows "(INF i:I. f i + c) = (INF i:I. f i) + c"
-proof (cases "I \<noteq> {}")
-  case True
-  then show ?thesis
-    apply(subst ennreal_approx_INF[symmetric, of _ "(INF i:I. f i) + c"])
-    apply(rule add_mono) apply(rule INF_lower) apply simp_all 
-  proof -
-    fix e
-    from True obtain i where "f i \<le> (INF x:I. f x)" and iI: "i\<in>I" 
-       
-      sorry
-    then have "\<And>c. f i \<le> (INF x:I. f x) + ennreal c"  
-      by (metis add.right_neutral add_mono zero_le)  
-    with iI show "\<exists>i\<in>I. c = top \<or> f i \<le> (INF x:I. f x) + ennreal e"
-      apply(intro bexI[where x=i]) by auto  
-  qed
-next
-  case False
-  then show ?thesis by auto
-qed 
-  *)
-
-thm INF_ennreal_add_const
-
-
-lemma INF_ereal_add_left:
-  assumes "I \<noteq> {}" "c \<noteq> -\<infinity>" "\<And>x. x \<in> I \<Longrightarrow> 0 \<le> f x"
-  shows "(INF i:I. f i + c :: ereal) = (INF i:I. f i) + c"
-proof -
-  have "(INF i:I. f i) \<noteq> -\<infinity>"
-    unfolding INF_eq_minf using assms by (intro exI[of _ 0]) auto
-  then show ?thesis
-    apply (subst continuous_at_Inf_mono[where f="\<lambda>x. x + c"])
-        apply     (auto simp: mono_def ereal_add_mono \<open>I \<noteq> {}\<close> \<open>c \<noteq> -\<infinity>\<close> )
-    apply(subst continuous_at_imp_continuous_at_within )
-    apply(subst continuous_at)  apply (auto simp:     \<open>I \<noteq> {}\<close> \<open>c \<noteq> -\<infinity>\<close> ) sorry
-qed
-lemma INF_ennreal_add_const'':
-  fixes f g :: "_ \<Rightarrow> ennreal" 
-  shows "(INF i:I. f i + c) = (INF i:I. f i) + c"
-proof (cases "I \<noteq> {}")
-  case True 
-  then  show ?thesis 
-  apply(subst   continuous_at_Inf_mono[of "\<lambda>x. x + c" ])
-        apply (auto simp: mono_def   \<open>I \<noteq> {}\<close>    ) 
-    apply(subst continuous_at_imp_continuous_at_within) 
-     apply(subst continuous_at)
-     apply auto
-    unfolding filterlim_def   sorry 
-qed auto
-
-lemma INF_ennreal_add_const':
-  fixes f g :: "_ \<Rightarrow> ennreal" 
-  shows "(INF i:I. f i + c) = (INF i:I. f i) + c"
-  using INF_ereal_add_right
-proof (cases "I \<noteq> {}")
-  case True
-  then show ?thesis
-    apply(subst ennreal_approx_INF[symmetric, of _ "(INF i:I. f i) + c"])
-    apply(rule add_mono) apply(rule INF_lower) apply simp_all 
-  proof -
-    fix e
-    from True obtain i where "f i \<le> (INF x:I. f x)" and iI: "i\<in>I" 
-       
-      sorry
-    then have "\<And>c. f i \<le> (INF x:I. f x) + ennreal c"  
-      by (metis add.right_neutral add_mono zero_le)  
-    with iI show "\<exists>i\<in>I. c = top \<or> f i \<le> (INF x:I. f x) + ennreal e"
-      apply(intro bexI[where x=i]) by auto  
-  qed
-next
-  case False
-  then show ?thesis by auto
-qed 
-
-
-
-lemma INF_ennreal_const_add':
-  fixes f g :: "_ \<Rightarrow> ennreal" 
-  shows "(INF i:I. c + f i) = c + (INF i:I. f i)" 
-    using   INF_ennreal_add_const'[of f c I ] by (simp add: ac_simps) 
-
-instantiation ennreal_inv :: SUP_mult_left
-begin
-
-fun times_ennreal_inv where "times_ennreal_inv (E x1) (E x2) = E (x1 + x2)"
-fun Inf_ennreal_inv where "Inf_ennreal_inv A = E (Sup (thee ` A))"
-fun Sup_ennreal_inv where "Sup_ennreal_inv A = E (Inf (thee ` A))"
-definition bot_ennreal_inv where [simp]: "bot_ennreal_inv = E top"
-fun  sup_ennreal_inv where "sup_ennreal_inv (E a) (E b) = E (inf a b)"
-definition top_ennreal_inv where  [simp]: "top_ennreal_inv = E bot"
-fun  inf_ennreal_inv where "inf_ennreal_inv (E a) (E b) = E (sup a b)"
-fun  less_eq_ennreal_inv where "less_eq_ennreal_inv (E a) (E b) = (a \<ge> b)"
-fun  less_ennreal_inv where "less_ennreal_inv (E a) (E b) = (a > b)"
-                               
-lemma thee_times: "thee (a * b) = thee a + thee b"
-  apply(cases a; cases b) by auto
-
-instance apply(standard)
-  subgoal for x y apply(cases x; cases y) by auto
-  subgoal for x  apply(cases x ) by auto
-  subgoal for x y z apply(cases x; cases y; cases z) by auto
-  subgoal for x y apply(cases x; cases y) by auto
-  subgoal for x y apply(cases x; cases y) by auto
-  subgoal for x y apply(cases x; cases y) by auto
-  subgoal for x y z apply(cases x; cases y; cases z) by auto
-  subgoal for x y apply(cases x; cases y) by auto
-  subgoal for x y apply(cases x; cases y) by auto
-  subgoal for x y z apply(cases x; cases y; cases z) by auto
-  subgoal for x A apply(cases x) apply simp   
-    by (simp add: Sup_upper rev_image_eqI)   
-  subgoal for A z apply(cases z) apply simp 
-    by (metis SUP_least ennreal_inv.exhaust_sel less_eq_ennreal_inv.simps)
-  subgoal for x A apply(cases x) apply simp
-    by (metis INF_lower ennreal_inv.sel) 
-  subgoal for A z apply(cases z) apply simp 
-    by (metis INF_greatest ennreal_inv.collapse less_eq_ennreal_inv.simps) 
-  subgoal   by auto
-  subgoal   by auto
-  subgoal for c f I apply(cases c) by (simp add: thee_times INF_ennreal_const_add')   
-  done
-end
  
 
-instance ennreal_inv :: ab_semigroup_mult
-  apply(standard) 
-  subgoal for a b c apply(cases a; cases b; cases c) by (auto simp: mult.assoc)
-  subgoal for a b   apply(cases a; cases b ) by (auto simp: mult.commute)
-  done 
+subsection \<open>The Locale quant_sep_con\<close>
 
-
-thm complete_lattice_axioms
-term complete_lattice
-
-term "\<infinity> - \<infinity>"
-lemma "\<infinity> - \<infinity> = (\<infinity>::ennreal)" by simp
-
-(* ordered_ab_semigroup_add *)
- 
-print_classes  
-          
-term "(div)"
-                
-thm algebra_simps
-thm add_mono[no_vars]
 locale quant_sep_con =  comm_monoid oper neutr
   for  
-      oper :: "'b::{complete_lattice} \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>*" 70)
+    oper :: "'b::{complete_lattice} \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>*" 70)
     and neutr :: "'b" ("\<^bold>1") +
   fixes
-      divide :: "'b \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>div" 70)
+    divide :: "'b \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>div" 70)
   assumes 
-         AA: "\<And>x::'b. x \<^bold>div \<^bold>1 = x"   (* gilt für domain    top  *    /  1
+    AA: "\<And>x::'b. x \<^bold>div \<^bold>1 = x"   (* gilt für domain    top  *    /  1
                                                     [0,1]     1    *   /   1
                                                    ennreal    0    +   -   0  *)  
-  and BB: "\<And>x::'b. x > bot \<Longrightarrow> x \<^bold>div bot = top"    
-  and DD: "\<And>x. x \<^bold>* bot = bot"   
-  and FF: "bot < \<^bold>1" 
-(*  and GG: "\<And>x::'b. x < top \<Longrightarrow> x \<^bold>div top = bot"    *)
+    and BB: "\<And>x::'b. x > bot \<Longrightarrow> x \<^bold>div bot = top"    
+    and DD: "\<And>x. x \<^bold>* bot = bot"   
+    and FF: "bot < \<^bold>1" 
+    and SUP_mult_left': "\<And>c A. c \<^bold>* Sup A = Sup (((\<^bold>*) c) ` A)"
+    and oper_mono: "\<And>a b c d. a \<le> b \<Longrightarrow> c \<le> d \<Longrightarrow> a \<^bold>* c \<le> b \<^bold>* d"
+    and divide_right_mono_general: "\<And>a b c. a \<le> b \<Longrightarrow> a \<^bold>div c \<le> b \<^bold>div c" 
+    and divide_right_antimono_general: "\<And>a b c. c \<le> b \<Longrightarrow> a \<^bold>div b \<le> a \<^bold>div c" 
+    and JJ:  "\<And>x. x < top \<Longrightarrow>  top \<^bold>div x = top"
+    and div_mult_adjoint: \<comment> \<open>The essence of equation 79\<close>
+        "\<And>A B C :: 'b. \<lbrakk>(bot < C \<or> bot < B ) ; (C < top \<or> B < top) \<rbrakk>
+                   \<Longrightarrow> (A \<le> B \<^bold>div C) \<longleftrightarrow> A \<^bold>* C \<le> B"
 
-  and SUP_mult_left': "\<And>c A. c \<^bold>* Sup A = Sup (((\<^bold>*) c) ` A)"
-(*  and ff: "\<And>A. (SUP (x,y):A. x \<^bold>* y) \<le> (SUP (x,y):A. x ) \<^bold>* (SUP (x,y):A. y)" *)
-  and oper_mono: "\<And>a b c d. a \<le> b \<Longrightarrow> c \<le> d \<Longrightarrow> a \<^bold>* c \<le> b \<^bold>* d"
-  and  divide_right_mono_general: "\<And>a b c. a \<le> b \<Longrightarrow> a \<^bold>div c \<le> b \<^bold>div c" 
-  and  divide_right_antimono_general: "\<And>a b c. c \<le> b \<Longrightarrow> a \<^bold>div b \<le> a \<^bold>div c" 
-  and JJ:  "\<And>x. x < top \<Longrightarrow>  top \<^bold>div x = top"
 
-  and div_mult_adjoint: \<comment> \<open>The essence of equation 79\<close>
-     "\<And>A B C :: 'b. (bot < C \<or> bot < B ) \<Longrightarrow> (C < top \<or> B < top) \<Longrightarrow> (A \<le> B \<^bold>div C) \<longleftrightarrow> A \<^bold>* C \<le> B"
-   
-
-begin 
- (*
-lemma SUP_times_distrib2_general:
-  fixes g :: "_\<Rightarrow>_\<Rightarrow>'b"
-  shows "(SUP (x,y):A. f x y \<^bold>* g x y) \<le> (SUP (x, y):A. f x y) \<^bold>* (SUP (x, y):A. g x y)"   
-  using ff[where A="(\<lambda>(x,y). (f x y, g x y)) ` A"]  
-  by (auto simp: split_beta)  *)
-
-thm mult_left_mono[no_vars] 
+begin  
+ 
 lemma oper_left_mono: "\<And>a b c d. a \<le> b   \<Longrightarrow> c \<^bold>* a \<le> c \<^bold>* b"
   apply(rule oper_mono) by auto
 
@@ -383,236 +278,7 @@ qed
 context
   assumes "SORT_CONSTRAINT ('a::{sep_algebra})" 
 begin
-
-
-term "INF x:A. (f x::'b)"
-  
-end
-end
-
-
-locale quant_sep_con_oper2 =  quant_sep_con oper neutr divide
-  for  
-      oper :: "'b::{complete_lattice} \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>*" 70)
-    and neutr :: "'b" ("\<^bold>1") 
-    and  divide :: "'b \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>div" 70) +
-  fixes
-      oper2 :: "'b \<Rightarrow> 'b \<Rightarrow> 'b" (infixl "\<^bold>+" 65)
-    assumes
-      plusmal_distrib[algebra_simps]: "\<And>a b c. a \<^bold>* (b \<^bold>+ c) = a \<^bold>* b \<^bold>+ a \<^bold>* c"
-      and oper2_mono: "\<And>a b c d. a \<le> b \<Longrightarrow> c \<le> d \<Longrightarrow> a \<^bold>+ c \<le> b \<^bold>+ d"
-begin
-
-
-lemma SUP_plus_subdistrib: "\<And>S. \<And>f g::_\<Rightarrow>'b. (SUP x:S. f x \<^bold>+ g x) \<le> (SUP x:S. f x) \<^bold>+ (SUP x:S. g x)"
-  by (simp add: SUP_least SUP_upper oper2_mono)
-
-end
-
-
-lemma ennreal_inverse_antimono:
-  "(a::ennreal) \<le> b \<Longrightarrow> inverse b \<le> inverse a"
-  apply(cases a; cases b; cases "a=0"; cases "b=0") 
-     apply simp_all
-   apply(simp add: inverse_ennreal)   
-  using ennreal_neq_top top.extremum_uniqueI by blast   
-
-
-lemma ennreal_div_antimono:
-  "(a::ennreal) \<le> b \<Longrightarrow> c / b \<le> c / a"
-  unfolding divide_ennreal_def apply(rule mult_mono)
-     apply simp
-    apply(rule ennreal_inverse_antimono)
-  apply simp apply simp by simp
-  
-lemma ennreal_mult_divide: "b > 0 \<Longrightarrow> b < (\<infinity>::ennreal) \<Longrightarrow> b * (a / b) = a" 
-  apply(cases a; cases b) apply (auto simp: divide_ennreal ennreal_mult[symmetric])
-   by (simp add: ennreal_divide_eq_top_iff ennreal_mult_eq_top_iff)    
-
-lemma eq79_ennreal: fixes A B C :: ennreal
-  shows "(bot < C \<or> bot < B )  \<Longrightarrow> (C < top \<or> B < top) \<Longrightarrow> ( A \<le> B / C) \<longleftrightarrow> A * C \<le> B "
-  apply(cases "C<bot")
-  subgoal by auto
-  apply(cases "C < top")
-  subgoal   
-    by (metis bot.extremum bot_ennreal  
-            divide_le_posI_ennreal divide_less_ennreal dual_order.irrefl 
-              ennreal_divide_eq_0_iff ennreal_divide_eq_top_iff ennreal_mult_less_top ennreal_times_divide 
-                eq_iff eq_refl leD le_less_linear linear mult.commute mult_eq_0_iff order.not_eq_order_implies_strict
-                  order.strict_trans1 order_trans top_greatest)   
-  subgoal  
-    by (metis bot.extremum_strict bot_ennreal ennreal_divide_top ennreal_mult_eq_top_iff mult_eq_0_iff nn nn_bot not_le)  
-  done
-
-lemma "\<not> c < (b::ereal) \<longleftrightarrow> b \<le> c" using not_less by blast
-definition "divv a (b::ereal) = min 1 (a / b)"
-lemma fixes a b c :: ereal
-  assumes A: "0 \<le> a" "a \<le> 1"   "0 \<le> b" "b \<le> 1"   "0 \<le> c" "c \<le> 1"
-    and B1: "(0 < b \<or> 0 < c )" and B2: "(b< 1 \<or> c < 1)"
-  shows "(a \<le>divv b c) \<longleftrightarrow> a * c \<le> b"
-proof(cases "b>c")
-  case True
-  then have *: "divv b c = 1" using A apply(auto simp: divv_def min_def) 
-    by (metis abs_ereal_ge0 divide_ereal_def ereal_divide_one ereal_divide_same ereal_infty_less(1) ereal_inverse_antimono_strict ereal_mult_left_mono leD less_imp_le)
-  have "a \<le> divv b c \<longleftrightarrow> a \<le> 1" unfolding * by simp
-  also have "\<dots> \<longleftrightarrow> a * c \<le> b" using True  
-    by (metis assms(2) assms(5) ereal_mult_left_mono  less_imp_triv mult.comm_neutral mult.commute not_less order_trans)   
-  finally show ?thesis .
-next
-  case False
-  then show ?thesis 
-    using A apply(auto  simp: divv_def)
-    subgoal  
-      by (metis antisym ereal_divide_Infty(1) ereal_le_divide_pos ereal_zero_times less_eq_ereal_def mult.commute)  
-    subgoal 
-      apply(cases "c<0")  
-      subgoal by auto
-      subgoal  (* HERE I NEED THE EXTRA ASSUMPTIONS *)
-        apply(cases "c=0") 
-        subgoal using  B1 by simp
-        subgoal using B2   
-          by (metis ereal_divide_Infty(1) ereal_divide_one ereal_infty_less(1) ereal_le_divide_pos leD linorder_cases mult.commute)  
-        done
-      done
-    done
-  qed 
-
-
-(*
-  subgoal by auto 
-    subgoal
-      apply rule
-      subgoal using mult_left_mono[where a="A" and b="B / C" and c="C"]
-        apply(cases "C<\<infinity>")
-        subgoal    
-          apply (simp add:  mult.commute)  
-          apply(subst (asm) ennreal_mult_divide) apply (auto simp add: bot_ennreal)  
-        subgoal  
-          by (auto simp: nn ) 
-        done
-      subgoal
-        apply(cases "C<\<infinity>")
-        subgoal  
-          by (s mt divide_less_ennreal ennreal_mult_divide infinity_ennreal_def less_le mult_left_mono not_less)
-        subgoal 
-          apply auto
-          apply(simp only: nn)
-          apply simp  (* oopsie \<forall>x. x/\<infinity> = 0 *)           
-          using  nn 
-          by (m etis ennreal_mult_eq_top_iff linorder_not_less)      
-        done
-      done 
-done *)
-
-
-interpretation FULL: quant_sep_con   "( * )" "1::ennreal"  "(/)"   
-  apply standard subgoal  
-    by (simp add: ennreal_div_one)  
-  subgoal  
-    by (simp add: bot_ennreal)  
-  subgoal 
-    by (simp add: bot_ennreal)  
-  subgoal 
-    by (simp add: bot_ennreal)  
-  subgoal     
-    using SUP_mult_left_ennreal[where f=id] by simp 
-  subgoal 
-    by (auto simp: mult_mono)  
-  subgoal
-    by (simp add: divide_right_mono_ennreal)
-      
-  subgoal for a b c
-    using ennreal_div_antimono by simp
-  subgoal using ennreal_top_divide by simp
-  subgoal apply(rule eq79_ennreal) by auto
-  done
-
- (*
-datatype UnitInterval = ZOI ennreal 
-
-interpretation PROB: quant_sep_con  "( * )"  "(/)"   "1::UnitInterval" 
-  apply standard  .
- *)
-
-
-instantiation "bool" :: one
-begin
-definition "one_bool == True"
-instance by standard
-end 
-
-
-
-interpretation BOOL: quant_sep_con   "(\<and>)" "True" "\<lambda>x y. y \<longrightarrow> x"  
-  apply standard 
-  by auto
-
-instantiation "dual_ord" :: (Inf) Sup
-begin
-lift_definition Sup_dual_ord :: "('a dual_ord) set \<Rightarrow> 'a dual_ord" is
-  "\<lambda>A :: 'a set. Inf A" .
-instance ..
-end
-
-instantiation "dual_ord" :: (Sup) Inf
-begin
-lift_definition Inf_dual_ord :: "('a dual_ord) set \<Rightarrow> 'a dual_ord" is
-  "\<lambda>A :: 'a set. Sup A" .
-instance ..
-end
-
-
-instantiation "dual_ord" :: (sup) inf
-begin
-lift_definition inf_dual_ord :: "('a dual_ord)   \<Rightarrow> 'a dual_ord \<Rightarrow> 'a dual_ord" is
-  "\<lambda>a b :: 'a  . sup a b" .
-instance ..
-end
-
-instantiation "dual_ord" :: (inf) sup
-begin
-lift_definition sup_dual_ord :: "('a dual_ord)   \<Rightarrow> 'a dual_ord \<Rightarrow> 'a dual_ord" is
-  "\<lambda>a b :: 'a  . inf a b" .
-instance ..
-end
-
-
-thm dual_semilattice
-thm dual_lattice
-thm dual_complete_lattice
-
-(*
-instance "dual_ord" :: (complete_lattice) complete_lattice
-  oops
-
- 
-  term "a::'b::{complete_lattice}"
- 
-
-
-
-interpretation ERT: quant_sep_con "(+)" "\<lambda>_. undefined"  "0::ennreal dual_ord"
-  apply standard by (auto intro: Sup_least Sup_upper Inf_lower Inf_greatest)
-*)
-
-context quant_sep_con 
-begin          
-context
-  assumes "SORT_CONSTRAINT ('a::{sep_algebra})" 
-begin
-
-definition emb  where "emb P = (\<lambda>h. if P h then \<^bold>1 else bot)"
-
-lemma emb_range: "emb P x \<in> {bot,\<^bold>1}" unfolding emb_def by auto
-
-lemma emb_squared: "emb P x = emb P x \<^bold>* emb P x"
-  apply (cases "emb P x = bot") using emb_range apply (auto simp: DD) by fastforce
-
-lemma emb_1: "emb P h = \<^bold>1 \<longleftrightarrow> P h"
-  apply (auto simp: emb_def) using FF by blast  
-
-definition sep_empty_q :: "'a \<Rightarrow> 'b"  where
-  "sep_empty_q \<equiv> emb (\<lambda>h. h = 0)"
+   
 
 subsection \<open>Quantitative Separating Conjunction\<close>
 
@@ -646,13 +312,52 @@ lemma
   oops
 
 subsection \<open>Embedding of SL into QSL\<close>
- 
+
+definition emb  where "emb P = (\<lambda>h. if P h then \<^bold>1 else bot)"
+
+lemma emb_range: "emb P x \<in> {bot,\<^bold>1}" unfolding emb_def by auto
+
+lemma emb_squared: "emb P x = emb P x \<^bold>* emb P x"
+  apply (cases "emb P x = bot") using emb_range apply (auto simp: DD) by fastforce
+
+lemma emb_1: "emb P h = \<^bold>1 \<longleftrightarrow> P h"
+  apply (auto simp: emb_def) using FF by blast  
+
+definition sep_empty_q :: "'a \<Rightarrow> 'b"  where
+  "sep_empty_q \<equiv> emb (\<lambda>h. h = 0)"
+
+
+
 abbreviation sep_impl_q (infixr "-*q" 35) where   "(P -*q Q) \<equiv> (emb P -*qq Q)" 
  
   
 
 end
 end
+
+
+
+subsection \<open>The Locale quant_sep_con_oper2\<close>
+
+locale quant_sep_con_oper2 =  quant_sep_con oper neutr divide
+  for  
+      oper :: "'b::{complete_lattice} \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>*" 70)
+    and neutr :: "'b" ("\<^bold>1") 
+    and  divide :: "'b \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>div" 70) +
+  fixes
+      oper2 :: "'b \<Rightarrow> 'b \<Rightarrow> 'b" (infixl "\<^bold>+" 65)
+    assumes
+      plusmal_distrib[algebra_simps]: "\<And>a b c. a \<^bold>* (b \<^bold>+ c) = a \<^bold>* b \<^bold>+ a \<^bold>* c"
+      and oper2_mono: "\<And>a b c d. a \<le> b \<Longrightarrow> c \<le> d \<Longrightarrow> a \<^bold>+ c \<le> b \<^bold>+ d"
+begin
+
+
+lemma SUP_plus_subdistrib: "\<And>S. \<And>f g::_\<Rightarrow>'b. (SUP x:S. f x \<^bold>+ g x) \<le> (SUP x:S. f x) \<^bold>+ (SUP x:S. g x)"
+  by (simp add: SUP_least SUP_upper oper2_mono)
+
+end
+
+subsection \<open>The Locale quant_sep_con_one\<close>
 
 locale quant_sep_con_one = quant_sep_con oper  neutr divide for  
       oper :: "'b::{complete_lattice} \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>*" 64)
@@ -690,27 +395,15 @@ proof  (rule ext)
         subgoal (* ?B \<subseteq> ?A *) by (auto simp: AA emb_def CC FF)
         done
     subgoal by (simp add: AA emb_def)  
-    done
-
-  have "(\<exists>h'. h ## h' \<and> (bot::'b) < top \<and> Q (h + h') < top  \<and> P h') \<Longrightarrow> (INF h': { h'. h ## h' \<and> P h'}. Q (h + h')) < top"
-    apply safe subgoal for h' 
-      apply(rule order.strict_trans1)
-       apply(rule INF_lower[where i=h']) by auto
-    done
-  
-  have "~(\<exists>h'. h ## h' \<and> (bot::'b) < top \<and> Q (h + h') < top  \<and> P h') \<Longrightarrow> (INF h': { h'. h ## h' \<and> P h'}. Q (h + h')) = top"
-    apply auto  
-    by (metis Inf_UNIV Inf_top_conv(2) UNIV_I top.not_eq_extremum)  
+    done 
  
   have 2: "(INF h':{h'. h ## h' \<and> (bot::'b) = emb P h' \<and> (bot::'b) < Q (h + h')  \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}. Q (h + h') \<^bold>div emb P h')
       = top" 
     unfolding emb_def apply auto
-    using BB by simp_all 
-  
+    using BB by simp_all   
 
   have F: "{ h'. h ## h' \<and> P h'} = { h'. h ## h' \<and> P h' \<and> Q (h + h') = top} \<union> { h'. h ## h' \<and> P h' \<and> Q (h + h') < top}"
     using top.not_eq_extremum by blast
-
 
   have 3: "(INF h':{h'. h ## h' \<and> P h' \<and> Q (h + h') = top}. Q (h + h')) = top"
     by auto
@@ -924,6 +617,13 @@ proof -
   finally show "(P  \<longrightarrow>* Q) h \<longleftrightarrow> inf \<^bold>1 ((P -*q (emb Q)) h) = \<^bold>1" by simp
 qed 
 
+
+lemma quant_wand_conservative':
+  fixes P :: "'a \<Rightarrow> bool"
+  assumes "\<^bold>1 = top"
+  shows "(P  \<longrightarrow>* Q) h  \<longleftrightarrow> (((emb P) -*qq (emb Q)) h)  = \<^bold>1"
+  using assms quant_wand_conservative by simp
+
 lemma quant_star_conservative:
   fixes P :: "'a \<Rightarrow> bool"
   shows "(P ** Q) h \<longleftrightarrow> ((emb P) **q (emb Q)) h = \<^bold>1" 
@@ -940,10 +640,11 @@ proof -
     subgoal
     proof (rule ccontr, goal_cases)
       case 1
-      from 1(2) have "\<And>x y. (x,y) \<in> {(x,y) | x y. h = x + y \<and> x ## y} \<Longrightarrow> emb P x \<^bold>* emb Q y = bot "
-        apply auto  unfolding emb_def by (auto split: if_splits simp: DD)  
+      from 1(2) have "\<And>x y. (x,y) \<in> {(x,y) | x y. h = x + y \<and> x ## y}
+               \<Longrightarrow> emb P x \<^bold>* emb Q y = bot" 
+        by (auto simp: emb_def split: if_splits simp: DD)  
       then have "Sup {emb P x \<^bold>* emb Q y |x y. h = x + y \<and> x ## y} \<le>  bot"
-        apply(intro Sup_least) by auto
+          by (auto intro: Sup_least)
       with 1(1) show "False" using FF by simp 
     qed 
     done
@@ -963,22 +664,31 @@ lemma star_assoc:
   shows  "(x **q (y **q z))  = ((x **q y) **q z) "
 proof (rule ext)
   fix h 
-
-  have "(x **q (y **q z)) h    = (SUP (xa, ya):{(x, y) |x y. h = x + y \<and> x ## y}. x xa \<^bold>* (SUP (x, ya):{(x, y) |x y. ya = x + y \<and> x ## y}. y x \<^bold>* z ya))" 
+  have "(x **q (y **q z)) h 
+      = (SUP (xa, ya):{(x, y) |x y. h = x + y \<and> x ## y}. 
+          x xa \<^bold>* (SUP (x, ya):{(x, y) |x y. ya = x + y \<and> x ## y}. y x \<^bold>* z ya))" 
     unfolding sep_conj_q_SUP by auto 
-  also have "\<dots> = (SUP xa:{(x, y). h = x + y \<and> x ## y}. case xa of (xa, ya) \<Rightarrow> SUP i:{(x, y). ya = x + y \<and> x ## y}. (case i of (h21, h22) \<Rightarrow> x xa \<^bold>* y h21 \<^bold>* z h22))"
+  also have "\<dots> = (SUP xa:{(x, y). h = x + y \<and> x ## y}.
+                    case xa of (xa, ya) \<Rightarrow> SUP i:{(x, y). ya = x + y \<and> x ## y}.
+                          (case i of (h21, h22) \<Rightarrow> x xa \<^bold>* y h21 \<^bold>* z h22))"
     by(simp add: SUP_mult_left prod.case_distrib assoc)  
-  also have "\<dots> = (SUP xa:{(x, y). h = x + y \<and> x ## y}. SUP i:{((fst xa),x, y)| x y . snd xa = x + y \<and> x ## y}. (case i of (b, h21, h22) \<Rightarrow> x b \<^bold>* y h21 \<^bold>* z h22))"
-    apply(rule SUP_cong) apply simp
-    apply safe apply(rule Sup_cong) by force 
-  also have "\<dots> = (SUP xa:{(h1, h2, h3). h = h1 + h2 + h3 \<and> h1 ## h2 + h3 \<and> h1 ## h2 \<and> h1 ## h3 \<and> h3 ## h2 }. case xa of (h1, h2, h3) \<Rightarrow> x h1 \<^bold>* y h2 \<^bold>* z h3)"
+  also have "\<dots> = (SUP xa:{(x, y). h = x + y \<and> x ## y}.
+                    SUP i:{((fst xa),x, y)| x y . snd xa = x + y \<and> x ## y}.
+                          (case i of (b, h21, h22) \<Rightarrow> x b \<^bold>* y h21 \<^bold>* z h22))"
+    apply(rule SUP_cong) apply auto apply(rule Sup_cong) by force 
+  also have "\<dots> = (SUP xa:{(h1, h2, h3). h = h1 + h2 + h3 \<and> h1 ## h2 + h3
+                                           \<and> h1 ## h2 \<and> h1 ## h3 \<and> h3 ## h2 }.
+                    case xa of (h1, h2, h3) \<Rightarrow> x h1 \<^bold>* y h2 \<^bold>* z h3)"
     apply(subst SUP_UNION[symmetric]) 
     apply(rule SUP_cong)
     subgoal
-      apply (auto simp: sep_add_ac dest: sep_disj_addD  ) 
+      apply (auto simp: sep_add_ac dest: sep_disj_addD) 
       by (metis sep_add_assoc sep_disj_addD1 sep_disj_addD2)  
-    by auto
-  also have "\<dots> = (SUP xa:{(x, y). h = x + y \<and> x ## y}. SUP i:{(h1,h2, snd xa)| h1 h2 . fst xa = h1 + h2 \<and> h1 ## h2}. (case i of (h1, h2, h3) \<Rightarrow> x h1 \<^bold>* y h2 \<^bold>* z h3))"
+    subgoal by auto
+    done
+  also have "\<dots> = (SUP xa:{(x, y). h = x + y \<and> x ## y}.
+                    SUP i:{(h1,h2,snd xa)| h1 h2. fst xa = h1 + h2 \<and> h1 ## h2}.
+                          (case i of (h1, h2, h3) \<Rightarrow> x h1 \<^bold>* y h2 \<^bold>* z h3))"
     apply(subst SUP_UNION[symmetric]) 
     apply(rule SUP_cong)
     subgoal
@@ -988,22 +698,21 @@ proof (rule ext)
       subgoal   
         using sep_disj_addI3 sep_disj_commuteI by blast   
       done
-    by auto 
-  also have "\<dots> = (SUP xa:{(h12, h3). h = h12 + h3 \<and> h12 ## h3}. case xa of (h12, h3) \<Rightarrow> SUP h12:{(x, y). h12 = x + y \<and> x ## y}. (case h12 of (h1, h2) \<Rightarrow> (x h1 \<^bold>* y h2 \<^bold>* z h3)))"
+    subgoal
+      by auto
+    done
+  also have "\<dots> = (SUP xa:{(h12, h3). h = h12 + h3 \<and> h12 ## h3}.
+                    case xa of (h12,h3) \<Rightarrow> SUP h12:{(x, y). h12 = x+y \<and> x ## y}.
+                          (case h12 of (h1, h2) \<Rightarrow> (x h1 \<^bold>* y h2 \<^bold>* z h3)))"
     apply(rule SUP_cong) apply simp
     apply safe
     apply(rule Sup_cong) by force
   also have "\<dots> = ((x **q y) **q z) h"
-    unfolding sep_conj_q_SUP apply  (auto simp:  SUP_mult_right) 
+    unfolding sep_conj_q_SUP apply(auto simp: SUP_mult_right) 
     apply(rule SUP_cong) apply simp
     apply safe apply(rule SUP_cong) by (auto simp: mult.assoc) 
   finally show "(x **q (y **q z)) h  = ((x **q y) **q z) h " .
 qed
-
-
- 
-
-
 
 
 lemma star_comm:
@@ -1056,9 +765,9 @@ lemmas emp_neutral = emp_neutral1 emp_neutral2
 lemma sep_conj_q_left_commute:
   fixes P Q R :: "'a \<Rightarrow> 'b"
   shows  "(P **q Q **q R) = (Q **q P **q R)"
-  apply(subst  star_assoc)
-  apply(subst  star_comm)
-  apply(subst  star_assoc) by simp
+  apply(subst star_assoc)
+  apply(subst star_comm)
+  apply(subst star_assoc) by simp
 
 
 lemmas sep_conj_q_c = star_comm sep_conj_q_left_commute
@@ -1152,97 +861,14 @@ lemma theorem_3_6_general3:
     also have "... = ((emb \<phi>) **q Q) h \<^bold>* ((emb \<phi>) **q R) h"  by (simp add: local.sep_conj_q_alt)
     finally show "( (emb \<phi>) **q (\<lambda>h. Q h \<^bold>* R h)) h \<le> ((emb \<phi>) **q Q) h \<^bold>* ((emb \<phi>) **q R) h".
   qed
-
-(*
-lemma theorem_3_6: 
-  "(P **q (sup Q R)) = sup (P **q Q) (P **q R)"
-  "(P **q (Q + R)) \<le> (P **q Q) + (P **q R)"
-  "( (emb \<phi>) **q (Q * R)) \<le> ((emb \<phi>) **q Q) * ((emb \<phi>) **q R)"
-proof -
-  have "\<And>f q x. sup f q x = sup (f x) (q x)" by simp
-  have A: "\<And>a b :: ennreal. sup a b = Sup ({a} \<union> {b})"  
-    apply(subst Sup_union_distrib) by simp
-
-  have supmax: "\<And>x y::ennreal. sup x y = max x y" 
-    by (simp add: antisym)
-
-  have *: "\<And> a b c. (a::ennreal) * max b c = max (a*b) (a*c)"  
-    apply (auto simp add: max_def mult_left_mono) 
-    apply(rule antisym) 
-    by (simp_all add: mult_left_mono) 
-
-  have sup_times_distrib: "\<And> a b c. (a::ennreal) * sup b c = sup (a*b) (a*c)" 
-    unfolding supmax by (fact * )
-
-
-  { fix h
-    have "(P **q (sup Q R)) h = Sup {P x * sup Q R y |x y. h = x + y \<and> x ## y}"
-      unfolding sep_conj_q_def by simp
-    also have "\<dots> = Sup {P x * sup (Q y) (R y) |x y. h = x + y \<and> x ## y}"
-      by simp
-    also have "\<dots> = Sup { sup (P x * Q y) (P x * R y) |x y. h = x + y \<and> x ## y}"
-      apply(subst  sup_times_distrib)  by simp
-    also have "\<dots> = (SUP x:{(x, y). h = x + y \<and> x ## y}. case x of (x,y) \<Rightarrow> sup (P x * Q y) (P x * R y))" 
-      apply (rule arg_cong[where f=Sup]) by auto
-    also have "\<dots> = (SUP x:{(x, y). h = x + y \<and> x ## y}. sup (P (fst x) * Q (snd x)) (P (fst x) * R (snd x)))"
-      apply (rule arg_cong[where f=Sup])  
-      by (meson prod.case_eq_if)    
-    also have "\<dots> = sup (SUP x:{(x, y). h = x + y \<and> x ## y}. P (fst x) * Q (snd x))
-     (SUP x:{(x, y). h = x + y \<and> x ## y}. P (fst x) * R (snd x))"
-      apply(subst SUP_sup_distrib[symmetric]) 
-      subgoal apply auto apply(rule exI[where x=h])  apply(rule exI[where x=0]) by auto
-      by auto
-    also have "\<dots> = sup (P **q Q) (P **q R) h"
-      unfolding sep_conj_q_alt apply simp
-      by (metis (mono_tags, lifting) SUP_cong prod.case_eq_if)  
-    finally have "(P **q sup Q R) h = sup (P **q Q) (P **q R) h ".
-  }
-  then show "(P **q (sup Q R)) = sup (P **q Q) (P **q R)" by auto
-
-next
-  show "(P **q Q + R) \<le> (P **q Q) + (P **q R)" 
-  proof (rule le_funI)
-    fix h
-    have "(P **q (Q + R)) h = (SUP (x,y):{(x,y)|x y. h = x + y \<and> x ## y}. (P x * Q y) + (P x * R y) )"
-      unfolding sep_conj_q_alt  by(simp add: algebra_simps) 
-    also have "\<dots> = (SUP x:{(x,y)|x y. h = x + y \<and> x ## y}. (P (fst x) * Q (snd x)) + (P (fst x) * R (snd x)) )"
-      apply(rule Sup_cong) by force    
-    also have "\<dots> \<le> (SUP x:{(x,y)|x y. h = x + y \<and> x ## y}. P (fst x) * Q (snd x) )
-                    + (SUP x:{(x,y)|x y. h = x + y \<and> x ## y}. P (fst x) * R (snd x) )" 
-      by (rule SUP_plus_subdistrib)
-    also have "\<dots> = ((P **q Q) + (P **q R)) h"
-      unfolding sep_conj_q_alt apply simp     
-      by (metis (mono_tags, lifting) SUP_cong prod.case_eq_if)  
-    finally show "(P **q (Q + R)) h \<le> ((P **q Q) + (P **q R)) h " .
-  qed
-next
-  show "( (emb \<phi>) **q (Q * R)) \<le> ((emb \<phi>) **q Q) * ((emb \<phi>) **q R)"
-  proof (rule le_funI)
-    fix h
-    have "( (emb \<phi>) **q (Q * R)) h  =  (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. emb \<phi> h1 * (Q * R) h2)" unfolding sep_conj_q_alt by simp
-    also have "... = (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. emb \<phi> h1 * Q h2 * R h2)" apply (rule SUP_cong) 
-       apply simp
-      by (auto simp: mult.assoc)
-    also have "... =   (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. (emb \<phi> h1 * Q h2) * ( emb \<phi> h1  * R h2))"
-      apply (subst (1) emb_squared)
-      by (simp add: mult_ac)
-    also have "... \<le> (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}. (emb \<phi> h1 * Q h2)) * (SUP (h1, h2):{(h1, h2). h = h1 + h2 \<and> h1 ## h2}.  ( emb \<phi> h1  * R h2))"
-      by (rule SUP_times_distrib2)
-    also have "... = (((emb \<phi>) **q Q) * ((emb \<phi>) **q R)) h"  by (simp add: local.sep_conj_q_alt)
-    finally show "( (emb \<phi>) **q (Q * R)) h \<le> (((emb \<phi>) **q Q) * ((emb \<phi>) **q R)) h".
-  qed
-qed *)
-
-
-
+ 
 subsubsection \<open>Or\<close>
 lemma ennreal_supmax: "\<And>x y::ennreal. sup x y = max x y" 
   apply (rule antisym) by auto   
 
 
 lemma emb_or: "emb (X or Y) = (sup (emb X) (emb Y))" 
-  unfolding emb_def apply(rule ext) unfolding  sup_fun_def apply auto
-  by(auto simp add: ennreal_supmax max_def) 
+  unfolding emb_def apply(rule ext) unfolding  sup_fun_def by auto 
 
 
 subsubsection \<open>monotonicity of @{term "( **q)"}\<close>
@@ -1289,23 +915,8 @@ lemma sep_conj_q_impl_ennreal :
   by (auto intro: le_funI intro!: sep_conj_q_mono_ennreal[THEN le_funD])  
 
 
-subsubsection \<open>is @{term "(-*qq)"} monotonic\<close>
+subsubsection \<open>monotonicity of @{term "(-*qq)"}\<close>
 
-
-
-
-
-lemma "\<not> bot < (x::'b) \<longleftrightarrow> x = bot" 
-  by (simp add: nn_bot)  
-
-thm Inf_mono[no_vars]
-
-lemma "Inf A \<le> Inf B \<Longrightarrow> (\<And>b::'c::{complete_lattice}. b \<in> B \<Longrightarrow> \<exists>a\<in>A. a \<le> b)"
-  oops 
- 
-  thm INF_mono
-
- 
 
 lemma sep_impl_q_monoR: 
   fixes P :: "_\<Rightarrow>'b"
@@ -1353,8 +964,6 @@ lemma sep_impl_q_monoR':
   fixes P :: "_\<Rightarrow>'b"
   shows "Y \<le> Y' \<Longrightarrow> (P -*qq Y) h \<le> (P -*qq Y') h"  
   using sep_impl_q_monoR le_fun_def by fast
-
-lemma "(a::ennreal) div b = a / b" by auto
   
 lemma ennreal_inverse_antimono:
   "(a::ennreal) \<le> b \<Longrightarrow> inverse b \<le> inverse a"
@@ -1391,22 +1000,7 @@ proof -
     subgoal for h h' apply(drule le_funD[where x=h'])  
   oops *)
  
-lemma "x>0 \<Longrightarrow> x / 0 = (\<infinity>::ennreal)" by simp    
-lemma "x=0 \<Longrightarrow> x / 0 = (0::ennreal)" by simp  
 
-lemma "x / \<infinity> = (0::ennreal)" by simp  
-
-lemma "x = \<infinity> \<Longrightarrow>  \<infinity> / x = (0::ennreal)" using ennreal_top_divide by simp (* AAAHHHH *)
-lemma "x < \<infinity> \<Longrightarrow>  \<infinity> / x = (\<infinity>::ennreal)" using ennreal_top_divide by simp
-
-lemma "x=\<infinity> \<Longrightarrow> x - \<infinity> = (\<infinity>::ennreal)" by simp  
-lemma "x<\<infinity> \<Longrightarrow> x - \<infinity> = (0::ennreal)" apply simp    
-  by (simp add: diff_eq_0_iff_ennreal)  
-
-lemma "x - 0 = (x::ennreal)" by simp    
-
-lemma "x = 0 \<Longrightarrow> 0 - x = (0::ennreal)" by simp   (* AAAHHHH *)
-lemma "x > 0 \<Longrightarrow> 0 - x = (0::ennreal)" by simp  
 
 lemma sep_impl_q_antimonoL: 
   shows "P' \<le> P \<Longrightarrow> (P -*qq Y) \<le> (P' -*qq Y)"  
@@ -1453,83 +1047,7 @@ lemma sep_impl_q_mono:
 subsubsection \<open>adjointness of star and magicwand\<close>
 
 text \<open>theorem 3.9\<close>
-(*
-lemma adjoint_ltor: "(X **q (emb P)) \<le> Y \<Longrightarrow> X \<le> (P -*q Y)"
-proof -
-  assume "(X **q emb P) \<le> Y"
-  with star_comm have "(emb P **q X) \<le> Y"
-    apply(subst star_comm) .
-  then have "\<And>h'. (SUP (x, y):{(x, y) |x y. h' = x + y \<and> x ## y}. emb P x * X y)  \<le> Y h'"    
-    by (auto simp: le_fun_def sep_conj_q_SUP)
-  then have eq99: "\<And>h' h1' h2'. h' = h1' + h2' \<and> h1' ## h2' \<Longrightarrow> emb P h1' * X h2' \<le> Y h'"
-    by(auto simp add: Sup_le_iff)
-  have eq99': "\<And>h' h1' h2'. h' = h1' + h2' \<and> h1' ## h2' \<and> P h1' \<Longrightarrow>  X h2' \<le> Y h'"
-    using eq99 unfolding emb_def by force
-
-  show "X \<le> (P -*q Y)"
-  proof (rule le_funI)
-    fix h
-    show "X h \<le> (P -*q Y) h"
-    proof (cases "(\<exists>h'.  P h' \<and> h ## h')")
-      case no_h': False
-      have " (P -*q Y) h = (INF h':{h'. h ## h' \<and> P h'}. Y (h + h'))"
-        unfolding sep_impl_q_alt by simp
-      also have "\<dots> = Inf {}" 
-        using no_h' by force
-      also have "\<dots> = \<infinity>"
-        by auto
-      finally show ?thesis by auto
-    next
-      case True
-      then have "X h = (INF h':{h'. P h' \<and> h ## h'}. X h)"
-        by(auto simp add: INF_constant)
-      also have "\<dots> \<le> (INF h':{h'. h ## h' \<and> P h'}. Y (h + h'))"
-        apply(rule INF_mono)  
-        using eq99' by (auto simp: sep_add_ac) 
-      also have "\<dots> = (P -*q Y) h"
-        unfolding sep_impl_q_alt by simp
-      finally show ?thesis .
-    qed
-  qed 
-qed*)
-
-
-thm ereal_mult_divide
-
-
-lemma "(P::_\<Rightarrow>ennreal) h' * (Y (h + h') / P h') = FF \<Longrightarrow> G"
-  apply(subst (asm) ennreal_mult_divide) oops
-
  
-lemma "\<infinity> / (\<infinity>::ennreal) = 0"
-  by simp
-
-lemma "x / (\<infinity>::ennreal) = 0"
-  by simp
-
-lemma "x>0 \<Longrightarrow> x * (\<infinity>::ennreal) = \<infinity>" 
-  using ennreal_mult_eq_top_iff by auto
-
-lemma "0 * (\<infinity>::ennreal) = 0"
-  by auto
-
-thm ennreal_mult_divide
-lemma general_mult_divide: "\<And>a b. b > bot \<Longrightarrow> b < (top::'b) \<Longrightarrow> b \<^bold>* (a \<^bold>div b) = a" 
-  sorry
-
-thm mult_left_mono
-
-
-(* for bool
-    "(bot < A \<or> bot < B )" and 2: "(A < top \<or> B < top)"
-  is 
-    A \<or> B and ~A \<or> ~B
-  equiv with
-    (A\<and>~B) or (~A\<and>B)
-*)
-
-
-
 lemma adjoint_general:
   shows "(X **q P) \<le> Y \<longleftrightarrow> X \<le> (P -*qq Y)"
 proof -   
@@ -1567,7 +1085,6 @@ proof -
     by simp
   finally show ?thesis by simp
 qed
-
   
 lemma adjoint: "(X **q (emb P)) \<le> Y \<longleftrightarrow> X \<le> (P -*q Y)"
   using adjoint_general by blast
@@ -1793,9 +1310,180 @@ end
 end
 
 
+section \<open>Instantiating the general theory for specific Domains\<close>
+
+subsection \<open>Ennreal with multiplication\<close>
+
+
+
+lemma ennreal_inverse_antimono:
+  "(a::ennreal) \<le> b \<Longrightarrow> inverse b \<le> inverse a"
+  apply(cases a; cases b; cases "a=0"; cases "b=0") 
+     apply simp_all
+   apply(simp add: inverse_ennreal)   
+  using ennreal_neq_top top.extremum_uniqueI by blast   
+
+
+lemma ennreal_div_antimono:
+  "(a::ennreal) \<le> b \<Longrightarrow> c / b \<le> c / a"
+  unfolding divide_ennreal_def apply(rule mult_mono)
+     apply simp
+    apply(rule ennreal_inverse_antimono)
+  apply simp apply simp by simp
+  
+lemma ennreal_mult_divide: "b > 0 \<Longrightarrow> b < (\<infinity>::ennreal) \<Longrightarrow> b * (a / b) = a" 
+  apply(cases a; cases b) apply (auto simp: divide_ennreal ennreal_mult[symmetric])
+   by (simp add: ennreal_divide_eq_top_iff ennreal_mult_eq_top_iff)    
+
+lemma eq79_ennreal: fixes A B C :: ennreal
+  shows "(bot < C \<or> bot < B )  \<Longrightarrow> (C < top \<or> B < top) \<Longrightarrow> ( A \<le> B / C) \<longleftrightarrow> A * C \<le> B "
+  apply(cases "C<bot")
+  subgoal by auto
+  apply(cases "C < top")
+  subgoal   
+    by (metis bot.extremum bot_ennreal divide_less_ennreal  
+              ennreal_divide_eq_0_iff ennreal_divide_eq_top_iff
+              ennreal_times_divide leD le_less_linear top_greatest)   
+  subgoal  
+    by (metis bot.extremum_strict bot_ennreal ennreal_divide_top ennreal_mult_eq_top_iff mult_eq_0_iff nn nn_bot not_le)  
+  done
+
+lemma "\<not> c < (b::ereal) \<longleftrightarrow> b \<le> c" using not_less by blast
+definition "divv a (b::ereal) = min 1 (a / b)"
+lemma fixes a b c :: ereal
+  assumes A: "0 \<le> a" "a \<le> 1"   "0 \<le> b" "b \<le> 1"   "0 \<le> c" "c \<le> 1"
+    and B1: "(0 < b \<or> 0 < c )" and B2: "(b< 1 \<or> c < 1)"
+  shows "(a \<le>divv b c) \<longleftrightarrow> a * c \<le> b"
+proof(cases "b>c")
+  case True
+  then have *: "divv b c = 1" using A apply(auto simp: divv_def min_def) 
+    by (metis abs_ereal_ge0 divide_ereal_def ereal_divide_one ereal_divide_same ereal_infty_less(1) ereal_inverse_antimono_strict ereal_mult_left_mono leD less_imp_le)
+  have "a \<le> divv b c \<longleftrightarrow> a \<le> 1" unfolding * by simp
+  also have "\<dots> \<longleftrightarrow> a * c \<le> b" using True  
+    by (metis assms(2) assms(5) ereal_mult_left_mono  less_imp_triv mult.comm_neutral mult.commute not_less order_trans)   
+  finally show ?thesis .
+next
+  case False
+  then show ?thesis 
+    using A apply(auto  simp: divv_def)
+    subgoal  
+      by (metis antisym ereal_divide_Infty(1) ereal_le_divide_pos ereal_zero_times less_eq_ereal_def mult.commute)  
+    subgoal 
+      apply(cases "c<0")  
+      subgoal by auto
+      subgoal  (* HERE I NEED THE EXTRA ASSUMPTIONS *)
+        apply(cases "c=0") 
+        subgoal using  B1 by simp
+        subgoal using B2   
+          by (metis ereal_divide_Infty(1) ereal_divide_one ereal_infty_less(1) ereal_le_divide_pos leD linorder_cases mult.commute)  
+        done
+      done
+    done
+  qed 
+
+
+
+
+interpretation FULL: quant_sep_con   "( * )" "1::ennreal"  "(/)"   
+  apply standard subgoal  
+    by (simp add: ennreal_div_one)  
+  subgoal  
+    by (simp add: bot_ennreal)  
+  subgoal 
+    by (simp add: bot_ennreal)  
+  subgoal 
+    by (simp add: bot_ennreal)  
+  subgoal     
+    using SUP_mult_left_ennreal[where f=id] by simp 
+  subgoal 
+    by (auto simp: mult_mono)  
+  subgoal
+    by (simp add: divide_right_mono_ennreal)
+      
+  subgoal for a b c
+    using ennreal_div_antimono by simp
+  subgoal using ennreal_top_divide by simp
+  subgoal apply(rule eq79_ennreal) by auto
+  done
+
+subsubsection \<open>some experiments\<close>
+
+experiment
+begin 
+
+thm ereal_mult_divide
+
+lemma "(P::_\<Rightarrow>ennreal) h' * (Y (h + h') / P h') = FF \<Longrightarrow> G"
+  apply(subst (asm) ennreal_mult_divide) oops
+
+ 
+lemma "\<infinity> / (\<infinity>::ennreal) = 0"
+  by simp
+
+lemma "x / (\<infinity>::ennreal) = 0"
+  by simp
+
+lemma "x>0 \<Longrightarrow> x * (\<infinity>::ennreal) = \<infinity>" 
+  using ennreal_mult_eq_top_iff by auto
+
+lemma "0 * (\<infinity>::ennreal) = 0"
+  by auto
+
+thm ennreal_mult_divide
+ 
+
+thm mult_left_mono
+
+
+(* for bool
+    "(bot < A \<or> bot < B )" and 2: "(A < top \<or> B < top)"
+  is 
+    A \<or> B and ~A \<or> ~B
+  equiv with
+    (A\<and>~B) or (~A\<and>B)
+*)
+
+
+lemma "x>0 \<Longrightarrow> x / 0 = (\<infinity>::ennreal)" by simp    
+lemma "x=0 \<Longrightarrow> x / 0 = (0::ennreal)" by simp  
+
+lemma "x / \<infinity> = (0::ennreal)" by simp  
+
+lemma "x = \<infinity> \<Longrightarrow>  \<infinity> / x = (0::ennreal)" using ennreal_top_divide by simp (* AAAHHHH *)
+lemma "x < \<infinity> \<Longrightarrow>  \<infinity> / x = (\<infinity>::ennreal)" using ennreal_top_divide by simp
+
+lemma "x=\<infinity> \<Longrightarrow> x - \<infinity> = (\<infinity>::ennreal)" by simp  
+lemma "x<\<infinity> \<Longrightarrow> x - \<infinity> = (0::ennreal)" apply simp    
+  by (simp add: diff_eq_0_iff_ennreal)  
+
+lemma "x - 0 = (x::ennreal)" by simp    
+
+lemma "x = 0 \<Longrightarrow> 0 - x = (0::ennreal)" by simp   (* AAAHHHH *)
+lemma "x > 0 \<Longrightarrow> 0 - x = (0::ennreal)" by simp  
+
+
+
+end
+
+
 
 subsection \<open>Showing that quantitative separating connectives
    instantiated for bool yield the boolean separating connectives\<close>
+
+
+
+instantiation "bool" :: one
+begin
+definition "one_bool == True"
+instance by standard
+end 
+
+
+
+interpretation BOOL: quant_sep_con   "(\<and>)" "True" "\<lambda>x y. y \<longrightarrow> x"  
+  apply standard 
+  by auto
+
 
 lemma "BOOL.sep_conj_q = sep_conj"
   apply(rule ext) apply (rule ext)
@@ -1807,6 +1495,183 @@ lemma "BOOL.sep_impl_qq = sep_impl"
   unfolding sep_impl_def BOOL.sep_impl_qq_def
   by auto
 
+lemma "BOOL.sep_impl_qq = BOOL.sep_impl_q"
+  unfolding BOOL.sep_impl_qq_def BOOL.emb_def by auto
+
+
+subsection "showing stuff for ennreal with plus"
+
+
+
+                    
+thm INF_ennreal_add_const
+
+lemma INF_ennreal_add_const_local2:
+  fixes f g :: "_ \<Rightarrow> ennreal"
+  shows "(INF i:A. f i + c) = (INF i:A. f i) + c"
+  apply(cases  "A={}")
+  subgoal by simp
+  subgoal 
+    using continuous_at_Inf_mono[of "\<lambda>x. x + c" "f`A"]
+    using continuous_add[of "at_right (Inf (f ` A))", of "\<lambda>x. x" "\<lambda>x. c"]
+    by (auto simp: mono_def) 
+  done
+
+
+lemma INF_ennreal_const_add':
+  fixes f g :: "_ \<Rightarrow> ennreal" 
+  shows "(INF i:I. c + f i) = c + (INF i:I. f i)" 
+    using   INF_ennreal_add_const_local2[of f c I ] by (simp add: ac_simps) 
+ 
+
+
+
+typ "ennreal dual_ord"
+
+
+
+interpretation ENNREAL_PLUS: quant_sep_con "(+)" "0::ennreal dual_ord" "(-)"  
+  apply standard 
+              apply (transfer; auto simp add: bot_ennreal minus_top_ennreal; fail)+
+  subgoal apply (transfer)
+    subgoal for c A 
+      using INF_ennreal_add_const_local2[where f=id and c=c] 
+      by (simp add: algebra_simps)  
+    done
+  subgoal apply (transfer) by (simp add: add_mono)
+  subgoal apply (transfer) by (simp add: ennreal_minus_mono)
+  subgoal apply (transfer) by (simp add: ennreal_mono_minus)
+  subgoal apply (transfer) by (simp add: bot_ennreal)
+  subgoal by (transfer) (metis add.commute ennreal_minus_le_iff not_le top_greatest)
+  done
+
+
+
+abbreviation star_pot_method (infixl "**\<^sub>p" 60) where
+  "star_pot_method == ENNREAL_PLUS.sep_conj_q"
+
+abbreviation wand_pot_method (infixl "-*\<^sub>p" 60) where
+  "wand_pot_method == ENNREAL_PLUS.sep_impl_qq"
+
+
+thm ENNREAL_PLUS.adjoint_general
+
+
+
+
+subsection \<open>Experiments for an inverted order on ennreal\<close>
+
+
+
+class divide_right_mono = inverse + order + 
+  assumes divide_right_mono_general: "\<And>a b c::'a. a \<le> b \<Longrightarrow> a / c \<le> b / c" 
+
+class SUP_mult_left = complete_lattice + times +
+  assumes SUP_mult_left: "c * (SUP i:I. f i) = (SUP i:I. c * f i :: 'a)"
+begin
+
+lemma   SUP_mult_right: "(SUP i:I. f i) * c = (SUP i:I. f i * c :: 'a)"
+  sorry
+
+end
+
+instance ennreal :: SUP_mult_left
+  apply standard apply(rule SUP_mult_left_ennreal) .
+
+thm SUP_mult_left_ennreal
+
+
+datatype ennreal_inv = E (thee: ennreal)
+
+  
+ 
+
+instantiation ennreal_inv :: SUP_mult_left
+begin
+
+fun times_ennreal_inv where "times_ennreal_inv (E x1) (E x2) = E (x1 + x2)"
+fun Inf_ennreal_inv where "Inf_ennreal_inv A = E (Sup (thee ` A))"
+fun Sup_ennreal_inv where "Sup_ennreal_inv A = E (Inf (thee ` A))"
+definition bot_ennreal_inv where [simp]: "bot_ennreal_inv = E top"
+fun  sup_ennreal_inv where "sup_ennreal_inv (E a) (E b) = E (inf a b)"
+definition top_ennreal_inv where  [simp]: "top_ennreal_inv = E bot"
+fun  inf_ennreal_inv where "inf_ennreal_inv (E a) (E b) = E (sup a b)"
+fun  less_eq_ennreal_inv where "less_eq_ennreal_inv (E a) (E b) = (a \<ge> b)"
+fun  less_ennreal_inv where "less_ennreal_inv (E a) (E b) = (a > b)"
+                               
+lemma thee_times: "thee (a * b) = thee a + thee b"
+  apply(cases a; cases b) by auto
+
+instance apply(standard)
+  subgoal for x y apply(cases x; cases y) by auto
+  subgoal for x  apply(cases x ) by auto
+  subgoal for x y z apply(cases x; cases y; cases z) by auto
+  subgoal for x y apply(cases x; cases y) by auto
+  subgoal for x y apply(cases x; cases y) by auto
+  subgoal for x y apply(cases x; cases y) by auto
+  subgoal for x y z apply(cases x; cases y; cases z) by auto
+  subgoal for x y apply(cases x; cases y) by auto
+  subgoal for x y apply(cases x; cases y) by auto
+  subgoal for x y z apply(cases x; cases y; cases z) by auto
+  subgoal for x A apply(cases x) apply simp   
+    by (simp add: Sup_upper rev_image_eqI)   
+  subgoal for A z apply(cases z) apply simp 
+    by (metis SUP_least ennreal_inv.exhaust_sel less_eq_ennreal_inv.simps)
+  subgoal for x A apply(cases x) apply simp
+    by (metis INF_lower ennreal_inv.sel) 
+  subgoal for A z apply(cases z) apply simp 
+    by (metis INF_greatest ennreal_inv.collapse less_eq_ennreal_inv.simps) 
+  subgoal   by auto
+  subgoal   by auto
+  subgoal for c f I apply(cases c) by (simp add: thee_times INF_ennreal_const_add')   
+  done
+end
+ 
+
+instance ennreal_inv :: ab_semigroup_mult
+  apply(standard) 
+  subgoal for a b c apply(cases a; cases b; cases c) by (auto simp: mult.assoc)
+  subgoal for a b   apply(cases a; cases b ) by (auto simp: mult.commute)
+  done 
+
+
+thm complete_lattice_axioms
+term complete_lattice
+
+term "\<infinity> - \<infinity>"
+lemma "\<infinity> - \<infinity> = (\<infinity>::ennreal)" by simp
+
+
+subsection  "more experiments with type classes"
+
+
+
+class nogoodname = bot + top + times +
+  assumes bot_squared: "bot * bot = bot"     
+    and  top_squared: "top * top = top"
+
+
+class nonnegative = zero + order +
+  assumes zero_smallest: "\<And>x::'a. 0 \<le> x"
+
+instance ennreal :: nonnegative
+  apply(standard) by auto
+
+
+lemma SUP_times_distrib: "(SUP x:A. f x * g x::ennreal) \<le> (SUP x:A. f x) * (SUP x:A. g x)"
+      by (simp add: SUP_least SUP_upper mult_mono)
+
+lemma SUP_times_distrib2: "(SUP (x,y):A. f x y * g x y::ennreal) \<le> (SUP (x, y):A. f x y) * (SUP (x, y):A. g x y)" 
+  apply(rule Sup_least) apply auto 
+  apply(rule mult_mono) by(auto intro: SUP_upper2)  
+
+
+lemma SUP_times_distrib2_general:
+  fixes g :: "_\<Rightarrow>_\<Rightarrow>'b::{complete_lattice,ordered_semiring, nonnegative}"
+  shows "(SUP (x,y):A. f x y * g x y) \<le> (SUP (x, y):A. f x y) * (SUP (x, y):A. g x y)" 
+  apply(rule SUP_least)
+  apply auto apply(rule mult_mono)
+      by (auto intro: SUP_upper2 simp: zero_smallest)
 
 
 
