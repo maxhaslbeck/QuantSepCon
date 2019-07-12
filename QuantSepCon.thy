@@ -43,8 +43,8 @@ locale quant_sep_con =  comm_monoid oper neutr
     \<comment> \<open>bot is not neutral\<close>
     and FF: "bot < \<^bold>1" 
 begin  
- 
-lemma oper_left_mono: "\<And>a b c d. a \<le> b   \<Longrightarrow> c \<^bold>* a \<le> c \<^bold>* b"
+
+lemma oper_left_mono: "\<And>a b c d :: 'b. a \<le> b   \<Longrightarrow> c \<^bold>* a \<le> c \<^bold>* b"
   apply(rule oper_mono) by auto 
 
 lemma SUP_times_distrib2_general:
@@ -668,6 +668,14 @@ lemma theorem_3_6_general3:
     finally show "( (emb \<phi>) **q (\<lambda>h. Q h \<^bold>* R h)) h \<le> ((emb \<phi>) **q Q) h \<^bold>* ((emb \<phi>) **q R) h".
   qed
  
+lemma theorem_3_6: 
+  fixes 
+      Q :: "'a \<Rightarrow> 'b"  
+  shows 
+  "(P **q (sup Q R)) = sup (P **q Q) (P **q R)"
+  "( (emb \<phi>) **q (\<lambda>h. Q h \<^bold>* R h)) h \<le> ((emb \<phi>) **q Q) h \<^bold>* ((emb \<phi>) **q R) h"
+  using theorem_3_6_general1 theorem_3_6_general3 by auto
+
 subsubsection \<open>Or\<close>
 lemma ennreal_supmax: "\<And>x y::ennreal. sup x y = max x y" 
   apply (rule antisym) by auto   

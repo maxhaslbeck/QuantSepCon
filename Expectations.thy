@@ -1,6 +1,6 @@
 theory Expectations
 imports
- QuantSepCon
+ QuantSepConState
 begin
 
 section \<open>Misc\<close>
@@ -225,6 +225,23 @@ lemma quant_modus_ponens_general:
   shows "( P **\<^sub>e (P -*\<^sub>e X)) \<le> X" 
   using Exp.quant_modus_ponens_general by auto 
 
+subsubsection \<open>Theorem 3.6\<close>
+
+lemma times_fun': "f * g = (\<lambda>h. f h * g h)"
+  apply(rule ext) by simp
+
+lemma theorem_3_6: 
+  fixes 
+      Q :: "'a::{sep_algebra} \<Rightarrow> ennreal"
+  shows 
+  "(P **\<^sub>e (sup Q R)) = sup (P **\<^sub>e Q) (P **\<^sub>e R)"
+  "( (emb\<^sub>e \<phi>) **\<^sub>e (Q * R)) \<le> ((emb\<^sub>e \<phi>) **\<^sub>e Q) * ((emb\<^sub>e \<phi>) **\<^sub>e R)" 
+  subgoal using Exp.theorem_3_6(1)  by auto 
+  subgoal 
+    apply(subst (1) times_fun')
+    using Exp.theorem_3_6(2)
+    by (auto simp: le_fun_def)
+  done
 
 subsubsection \<open>Intuitionistic Expectations\<close>
 
@@ -251,6 +268,79 @@ lemma tightest_intuitionistic_expectations_wand:
     "\<And>X'. intuitionistic\<^sub>e X' \<Longrightarrow> X' \<le> X \<Longrightarrow>  X' \<le> (1\<^sub>e -*\<^sub>e X)"
   using Exp.tightest_intuitionistic_expectations_wand by auto
 
+
+
+
+subsubsection \<open>Star and Magic Wand with State\<close>
+
+
+abbreviation sep_conj_es (infixr "\<star>\<^sub>e" 35) where "sep_conj_es == Exp.sep_conj_s_q"
+abbreviation sep_impl_es (infixr "-\<star>\<^sub>e" 35) where "sep_impl_es == Exp.sep_impl_s_q"
+abbreviation "sep_empty_s\<^sub>e \<equiv> Exp.sep_empty_s_q" 
+
+lemma sep_conj_es_def:
+  fixes P :: "(_ \<times> 'a::{sep_algebra} \<Rightarrow> ennreal)"
+  shows "(P \<star>\<^sub>e Q) = (\<lambda>(s,h). Sup { P(s,x) * Q(s,y) | x y. h=x+y \<and> x ## y})"
+  by (simp add: Exp.sep_conj_s_q_def Exp.sep_conj_q_def)
+
+lemma sep_impl_es_def:
+  "(P -\<star>\<^sub>e Q) = (\<lambda>(s,h). INF h': { h'. h ## h' \<and> (bot < P(s,h') \<or> bot < Q(s,h+h') )
+                                \<and> ( P(s,h') < top \<or> Q(s,h+h') < top)}. 
+                                    (Q (s,h + h')) / P (s,h') )"
+  by (simp add: Exp.sep_impl_qq_def Exp.sep_impl_s_q_def )
+
+lemma sep_empty_s\<^sub>e_def: "sep_empty_s\<^sub>e = (\<lambda>(s, y). emb\<^sub>e (\<lambda>h. h = 0) y)"
+  by (auto simp: Exp.sep_empty_s_q_def Exp.sep_empty_q_def  )
+
+thm Exp.sep_conj_s_q_commute
+thm Exp.sep_conj_s_q_neutral
+thm Exp.sep_conj_s_q_assoc
+thm Exp.sep_conj_q_left_commute_s
+
+thm Exp.sep_conj_q_s_c
+
+
+lemma theorem_3_6_s:
+  fixes P Q R :: "(_ \<times> 'a::{sep_algebra} \<Rightarrow> ennreal)"
+  shows 
+  "(P \<star>\<^sub>e sup Q R) = (\<lambda>s. sup ((P \<star>\<^sub>e Q) s) ((P \<star>\<^sub>e R) s))"
+  (*  "(P \<star> (\<lambda>s. Q s + R s)) \<le> (\<lambda>s. (P \<star> Q) s + (P \<star> R) s)" *)
+  "( (emb\<^sub>e \<phi>) \<star>\<^sub>e (Q * R)) \<le> ((emb\<^sub>e \<phi>) \<star>\<^sub>e Q) * ((emb\<^sub>e \<phi>) \<star>\<^sub>e R)"
+  subgoal using Exp.theorem_3_6_s(1) .
+  subgoal
+    apply(subst (1) times_fun')    
+    using Exp.theorem_3_6_s(2)
+    by (auto simp: le_fun_def)
+  done
+
+thm Exp.sep_impl_s_q_mono
+thm Exp.sep_conj_s_q_mono'
+
+lemma adjoint_general_s:
+  shows "(X \<star>\<^sub>e P) \<le> Y \<longleftrightarrow> X \<le> (P -\<star>\<^sub>e Y)" 
+  using Exp.adjoint_general_s by auto
+
+
+lemma quant_modus_ponens_general_s:
+  shows "( P \<star>\<^sub>e (P -\<star>\<^sub>e X)) \<le> X"
+  using Exp.quant_modus_ponens_general_s by auto
+
+
+abbreviation "pure\<^sub>e \<equiv> Exp.pure_q"
+
+lemma pure\<^sub>e_def: "pure\<^sub>e X \<longleftrightarrow> (\<forall>s h1 h2. X (s,h1) = X (s,h2))"
+  using Exp.pure_q_def .
+
+lemma  theorem_3_11_1: "pure\<^sub>e X \<Longrightarrow> X * Y \<le> (X \<star>\<^sub>e Y)"
+    apply(subst (1) times_fun')   
+  using Exp.theorem_3_11_1 by auto
+
+lemma theorem_3_11_3:
+  "pure\<^sub>e X \<Longrightarrow> ((X * Y) \<star>\<^sub>e Z) = X * (Y \<star>\<^sub>e Z)"
+    apply(subst times_fun')+
+  using Exp.theorem_3_11_3 by auto  
+  
+ 
 
 
 end
