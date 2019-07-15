@@ -283,13 +283,17 @@ lemma pure\<^sub>e_alt: "pure\<^sub>p X \<longleftrightarrow> (\<forall>s h1 h2.
   subgoal by metis
   done
 
+
+lemma plus_fun': "f + g = (\<lambda>h. f h + g h)"
+  apply(rule ext) by simp
+
 lemma  theorem_3_11_1: "pure\<^sub>p X \<Longrightarrow> X + Y \<le> (X \<star>\<^sub>p Y)"
-    apply(subst (1) times_fun')   
+    apply(subst (1) plus_fun')   
   using ENNREAL_PLUS.theorem_3_11_1 oops
 
 lemma theorem_3_11_3:
   "pure\<^sub>p X \<Longrightarrow> ((X + Y) \<star>\<^sub>p Z) = X + (Y \<star>\<^sub>p Z)"
-    apply(subst times_fun')+
+    apply(subst plus_fun')+
   using ENNREAL_PLUS.theorem_3_11_3 oops
   
  
@@ -315,7 +319,7 @@ class SUP_mult_left = complete_lattice + times +
 begin
 
 lemma   SUP_mult_right: "(SUP i:I. f i) * c = (SUP i:I. f i * c :: 'a)"
-  sorry
+  oops
 
 end
 

@@ -292,12 +292,12 @@ lemma sep_impl_es_def:
 lemma sep_empty_s\<^sub>e_def: "sep_empty_s\<^sub>e = (\<lambda>(s, y). emb\<^sub>e (\<lambda>h. h = 0) y)"
   by (auto simp: Exp.sep_empty_s_q_def Exp.sep_empty_q_def  )
 
-thm Exp.sep_conj_s_q_commute
-thm Exp.sep_conj_s_q_neutral
-thm Exp.sep_conj_s_q_assoc
-thm Exp.sep_conj_q_left_commute_s
+lemmas sep_conj_es_commute =  Exp.sep_conj_s_q_commute
+lemmas sep_conj_es_neutral = Exp.sep_conj_s_q_neutral
+lemmas sep_conj_es_assoc = Exp.sep_conj_s_q_assoc
+lemmas sep_conj_es_left_commute_s = Exp.sep_conj_q_left_commute_s
 
-thm Exp.sep_conj_q_s_c
+lemmas sep_conj_es_c = Exp.sep_conj_q_s_c
 
 
 lemma theorem_3_6_s:
@@ -313,8 +313,8 @@ lemma theorem_3_6_s:
     by (auto simp: le_fun_def)
   done
 
-thm Exp.sep_impl_s_q_mono
-thm Exp.sep_conj_s_q_mono'
+lemmas sep_conj_es_mono = Exp.sep_impl_s_q_mono
+lemmas sep_impl_es_mono = Exp.sep_conj_s_q_mono'
 
 lemma adjoint_general_s:
   shows "(X \<star>\<^sub>e P) \<le> Y \<longleftrightarrow> X \<le> (P -\<star>\<^sub>e Y)" 

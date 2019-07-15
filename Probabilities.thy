@@ -1,5 +1,5 @@
 theory Probabilities
-imports QuantSepCon
+imports QuantSepConState
 begin
 
 
@@ -54,11 +54,19 @@ end
  
 lift_definition one_unitinterval :: unitinterval is 1 by simp
 lift_definition zero_unitinterval :: unitinterval is 0 by simp 
-lift_definition times_unitinterval :: "unitinterval \<Rightarrow> unitinterval \<Rightarrow> unitinterval" is "( * )"
+
+
+instantiation unitinterval :: times
+begin
+lift_definition times_unitinterval :: "unitinterval \<Rightarrow> unitinterval \<Rightarrow> unitinterval"   is "( * )"
     apply auto  
   by (metis ereal_mult_left_mono mult.right_neutral order_trans) 
-lift_definition divides_unitinterval :: "unitinterval \<Rightarrow> unitinterval \<Rightarrow> unitinterval" is "\<lambda>a b. min (a / b) (1)"
-  by auto   
+
+instance ..
+end
+ 
+lift_definition divide_unitinterval :: "unitinterval \<Rightarrow> unitinterval \<Rightarrow> unitinterval" (infixl "'/\<^sub>u" 70) is "\<lambda>a b. min (a / b) (1)"
+  by auto    
 
 lemma mm: "c \<ge> 0 \<Longrightarrow> c \<le> 1 \<Longrightarrow> c * max a b = max (c*a) (c*(b::ereal))"
   unfolding max_def apply auto 
@@ -112,7 +120,7 @@ next
 section "Use the unit interval to model probabilities"
 
 
-interpretation PROB: quant_sep_con  "times_unitinterval"   "one_unitinterval"   "divides_unitinterval"
+interpretation PROB: quant_sep_con  "( * )"   "one_unitinterval"   "divide_unitinterval"
   apply (standard; transfer)
   subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def) 
   subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def) 
@@ -148,7 +156,81 @@ abbreviation wand_prob (infixl "-*\<^sub>w" 60) where
 
 
 
+lemma times_fun': "f * g = (\<lambda>h. f h * g h)"
+  apply(rule ext) by simp
 
+
+subsubsection \<open>Star and Magic Wand with State\<close>
+
+
+abbreviation sep_conj_us (infixr "\<star>\<^sub>u" 35) where "sep_conj_us == PROB.sep_conj_s_q"
+abbreviation sep_impl_us (infixr "-\<star>\<^sub>u" 35) where "sep_impl_us == PROB.sep_impl_s_q"
+abbreviation "sep_empty_s\<^sub>u \<equiv> PROB.sep_empty_s_q" 
+abbreviation "emb\<^sub>u \<equiv> PROB.emb" 
+
+lemma sep_conj_es_def:
+  fixes P :: "(_ \<times> 'a::{sep_algebra} \<Rightarrow> unitinterval)"
+  shows "(P \<star>\<^sub>u Q) = (\<lambda>(s,h). Sup { P(s,x) * Q(s,y) | x y. h=x+y \<and> x ## y})"
+  by (simp add: PROB.sep_conj_s_q_def PROB.sep_conj_q_def)
+
+term sep_impl_us
+
+lemma sep_impl_es_def:
+  "(P -\<star>\<^sub>u Q) = (\<lambda>(s,h). INF h': { h'. h ## h' \<and> (bot < P(s,h') \<or> bot < Q(s,h+h') )
+                                \<and> ( P(s,h') < top \<or> Q(s,h+h') < top)}. 
+                                   Q (s,h + h') /\<^sub>u P (s,h') )"
+  by (simp add: PROB.sep_impl_qq_def PROB.sep_impl_s_q_def )
+
+lemma sep_empty_s\<^sub>u_def: "sep_empty_s\<^sub>u = (\<lambda>(s, y). emb\<^sub>u (\<lambda>h. h = 0) y)"
+  by (auto simp: PROB.sep_empty_s_q_def PROB.sep_empty_q_def  )
+
+lemmas sep_conj_es_commute =  PROB.sep_conj_s_q_commute
+lemmas sep_conj_es_neutral = PROB.sep_conj_s_q_neutral
+lemmas sep_conj_es_assoc = PROB.sep_conj_s_q_assoc
+lemmas sep_conj_es_left_commute_s = PROB.sep_conj_q_left_commute_s
+
+lemmas sep_conj_es_c = PROB.sep_conj_q_s_c
+
+
+lemma theorem_3_6_s:
+  fixes P Q R :: "(_ \<times> 'a::{sep_algebra} \<Rightarrow> unitinterval)"
+  shows 
+  "(P \<star>\<^sub>u sup Q R) = (\<lambda>s. sup ((P \<star>\<^sub>u Q) s) ((P \<star>\<^sub>u R) s))"
+  (*  "(P \<star> (\<lambda>s. Q s + R s)) \<le> (\<lambda>s. (P \<star> Q) s + (P \<star> R) s)" *)
+  "( (emb\<^sub>u \<phi>) \<star>\<^sub>u (Q * R)) \<le> ((emb\<^sub>u \<phi>) \<star>\<^sub>u Q) * ((emb\<^sub>u \<phi>) \<star>\<^sub>u R)"
+  subgoal using PROB.theorem_3_6_s(1) .
+  subgoal
+    apply(subst (1) times_fun')    
+    using PROB.theorem_3_6_s(2)
+    by (auto simp: le_fun_def)
+  done
+
+lemmas sep_conj_es_mono = PROB.sep_impl_s_q_mono
+lemmas sep_impl_es_mono = PROB.sep_conj_s_q_mono'
+
+lemma adjoint_general_s:
+  shows "(X \<star>\<^sub>u P) \<le> Y \<longleftrightarrow> X \<le> (P -\<star>\<^sub>u Y)" 
+  using PROB.adjoint_general_s by auto
+
+
+lemma quant_modus_ponens_general_s:
+  shows "( P \<star>\<^sub>u (P -\<star>\<^sub>u X)) \<le> X"
+  using PROB.quant_modus_ponens_general_s by auto
+
+
+abbreviation "pure\<^sub>u \<equiv> PROB.pure_q"
+
+lemma pure\<^sub>u_def: "pure\<^sub>u X \<longleftrightarrow> (\<forall>s h1 h2. X (s,h1) = X (s,h2))"
+  using PROB.pure_q_def .
+
+lemma  theorem_3_11_1: "pure\<^sub>u X \<Longrightarrow> X * Y \<le> (X \<star>\<^sub>u Y)"
+    apply(subst (1) times_fun')   
+  using PROB.theorem_3_11_1 by auto
+
+lemma theorem_3_11_3:
+  "pure\<^sub>u X \<Longrightarrow> ((X * Y) \<star>\<^sub>u Z) = X * (Y \<star>\<^sub>u Z)"
+    apply(subst times_fun')+
+  using PROB.theorem_3_11_3 by auto  
 
 
 
