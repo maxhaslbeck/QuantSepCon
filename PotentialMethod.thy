@@ -18,14 +18,14 @@ print_theorems
 
 setup_lifting type_definition_dual_ord
 print_theorems
-
+(*
 lemma type_definition_dual_ord_inv:
   "type_definition  to_dual_ord  (of_dual_ord) UNIV"
   sorry
 
 setup_lifting type_definition_dual_ord_inv
 print_theorems
-(*
+
 typedef 'a copy = "UNIV::'a set" morphisms of_copy to_copy
   by auto
 
