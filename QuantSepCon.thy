@@ -14,21 +14,25 @@ begin
 section \<open>Quantitative Separating Connectives\<close>
 
 
- 
+typ "'a::{complete_lattice}"
 
 subsection \<open>The Locale quant_sep_con\<close>
 print_classes
-locale quant_sep_con =  comm_monoid oper neutr
-  for  
-    oper :: "'b::{complete_lattice} \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>*" 70)
+print_locales
+term "(\<le>)" 
+locale quant_sep_con =  comm_monoid oper neutr + complete_lattice Inf Sup inf le less sup bot top
+  for   Inf :: "'b set \<Rightarrow> 'b" ("\<Sqinter>_" [900] 900)
+    and Sup ("\<Squnion>_" [900] 900) and
+      inf and le (infix "\<le>" 50) and  less (infix "<" 50)    and  sup top bot and
+    oper :: "'b  \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>*" 70)
     and neutr :: "'b" ("\<^bold>1") +
   fixes
     divide :: "'b \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>div" 70)
   assumes 
       \<comment>\<open>Facts about div\<close>
-    divide_neutral: "\<And>x::'b. x \<^bold>div \<^bold>1 = x"   (* maybe \<le> suffices *)
+    divide_neutral: "\<And>x::'b. x \<^bold>div \<^bold>1 = x"   (* maybe \<^bold>\<le> suffices *)
     and top_divide:  "\<And>x. x < top \<Longrightarrow>  top \<^bold>div x = top" (* superfluous *)
-    and divide_bot: "\<And>x::'b. x > bot \<Longrightarrow> x \<^bold>div bot = top"   (* superfluous *)
+    and divide_bot: "\<And>x::'b. bot < x  \<Longrightarrow> x \<^bold>div bot = top"   (* superfluous *)
     and divide_right_mono_general: "\<And>a b c. a \<le> b \<Longrightarrow> a \<^bold>div c \<le> b \<^bold>div c" 
     and divide_right_antimono_general: "\<And>a b c. c \<le> b \<Longrightarrow> a \<^bold>div b \<le> a \<^bold>div c" 
       \<comment>\<open>Facts about oper\<close>
@@ -59,21 +63,26 @@ lemma oper_mono: "\<And>a b c d. a \<le> b \<Longrightarrow> c \<le> d \<Longrig
 *)
 lemma oper_left_mono: "\<And>a b c d :: 'b. a \<le> b   \<Longrightarrow> c \<^bold>* a \<le> c \<^bold>* b"
   apply(rule oper_mono) by auto 
+ 
+abbreviation SUPR :: "'c set \<Rightarrow>('c \<Rightarrow> 'b) \<Rightarrow> 'b" 
+  where "SUPR A f \<equiv> \<Squnion>(f ` A)" 
+term "SUPR A (\<lambda>(x,y). f x y)"
 
 lemma SUP_times_distrib2_general:
   fixes g :: "_\<Rightarrow>_\<Rightarrow>'b"
-  shows "(SUP (x,y):A. f x y \<^bold>* g x y) \<le> 
-            (SUP (x, y):A. f x y) \<^bold>* (SUP (x, y):A. g x y)"  
+  shows "SUPR A (\<lambda>(x,y). f x y \<^bold>* g x y) \<le> 
+            SUPR A (\<lambda>(x,y). f x y) \<^bold>* SUPR A (\<lambda>(x,y). g x y)"  
   apply(rule SUP_least)
   apply auto apply(rule oper_mono)
-      by (auto intro: SUP_upper2)
+  by (auto intro: SUP_upper2)
 
 
-lemma SUP_mult_left: "\<And>c f. c \<^bold>* (SUP i:I. f i) = (SUP i:I. c \<^bold>* f i)"
+
+lemma SUP_mult_left: "\<And>c f. c \<^bold>* SUPR I (\<lambda>i. f i) = SUPR I (\<lambda>i. c \<^bold>* f i)"
   apply(subst SUP_mult_left') by simp
 
 
-lemma SUP_mult_right: "(SUP i:I. f i) \<^bold>* c = (SUP i:I. f i \<^bold>* c)"
+lemma SUP_mult_right: "SUPR I (\<lambda>i. f i) \<^bold>* c = SUPR I (\<lambda>i. f i \<^bold>* c)"
   by (simp add: commute SUP_mult_left) 
 
 
@@ -101,11 +110,14 @@ definition
   "P **q Q \<equiv> \<lambda>h. Sup { P x \<^bold>* Q y | x y. h=x+y \<and> x ## y}" 
 
 lemma sep_conj_q_alt :
-  "(P **q Q) = (\<lambda>h. (SUP (x,y): {(x,y). h=x+y \<and> x ## y}. P x \<^bold>* Q y))"
+  "(P **q Q) = (\<lambda>h. SUPR {(x,y). h=x+y \<and> x ## y} (\<lambda>(x,y). P x \<^bold>* Q y))"
   unfolding  sep_conj_q_def
   apply auto apply(rule ext)
   apply(rule arg_cong[where f=Sup]) by auto
 
+end
+end
+ (*
 lemma sep_conj_q_SUP:
   "(P **q Q) = (\<lambda>h. (SUP i:{(x,y)| x y. h=x+y \<and> x ## y}. (\<lambda>(x,y). P x \<^bold>* Q y) i))"
   unfolding sep_conj_q_def apply auto  apply (rule ext)
@@ -909,7 +921,7 @@ proof -
 
   show 1: "intuitionistic_q (1\<^sub>q -*qq X)"
     apply(rule intuitionistic_qI2)
-    by(rule *)
+    by(rule * )
 next
   show "(1\<^sub>q -*qq X) \<le> X"
   proof (rule le_funI)
@@ -962,6 +974,7 @@ abbreviation (input)
 end
 end
 
+*)
 
 section \<open>Showing that quantitative separating connectives
    instantiated for bool yield the boolean separating connectives\<close>
@@ -972,10 +985,32 @@ definition "one_bool == True"
 instance by standard
 end 
 
-interpretation BOOL: quant_sep_con   "(\<and>)" "True" "\<lambda>x y. y \<longrightarrow> x"  
+print_classes
+
+typ "'a::{complete_lattice}"
+
+thm dual_complete_lattice
+
+interpretation ENNREAL_PLUS: quant_sep_con Sup Inf sup "(\<ge>)" "(>)" inf bot top "(+)" "0::ennreal" "(-)" 
+  unfolding quant_sep_con_def apply safe
+  subgoal by standard   
+  subgoal using dual_complete_lattice .
+  subgoal apply standard
+   
+    sorry
+  done
+
+
+interpretation BOOL: quant_sep_con Inf Sup inf "(\<le>)" "(<)" sup top bot "(\<and>)" "True"  "\<lambda>x y. y \<longrightarrow> x"  
+  apply intro_locales
+  subgoal sorry
+  subgoal sorry
+  subgoal sorry
+  unfolding quant_sep_con_axioms_def
   apply standard 
   by auto
 
+thm BOOL.oper_left_mono
 
 lemma "BOOL.sep_conj_q = sep_conj"
   apply(rule ext) apply (rule ext)
@@ -1076,7 +1111,7 @@ qed
 end
 end
  
-
+*)
   
 
 subsection \<open>The Locale quant_sep_con_oper2\<close>
