@@ -126,9 +126,9 @@ interpretation PROB: quant_sep_con  "( * )"   "one_unitinterval"   "divide_uniti
   subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def) 
   subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def) 
   subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def) 
-  subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def) 
   subgoal by (metis mult_1 divv_def eq_iff ereal_0_less_1 min.cobounded2
-                    min.commute unitinterval_adjoint zero_less_one_ereal)   
+                    min.commute unitinterval_adjoint zero_less_one_ereal)  
+  subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def)  
   subgoal  
     by (metis divide_ereal_def eq_iff ereal_mult_right_mono ereal_zero_le_0_iff min.mono zero_le_divide_ereal)  
   subgoal  

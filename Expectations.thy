@@ -125,9 +125,9 @@ lemma eq79_ennreal: fixes A B C :: ennreal
 interpretation Exp: quant_sep_con "( * )" "1::ennreal"  "(/)"   
   apply standard subgoal  
     by (simp add: ennreal_div_one)  
+  subgoal using ennreal_top_divide by simp
   subgoal  
     by (simp add: bot_ennreal)  
-  subgoal using ennreal_top_divide by simp
   subgoal
     by (simp add: divide_right_mono_ennreal)      
   subgoal for a b c
@@ -160,6 +160,8 @@ lemma sep_impl_e_def:
                                     (Q (h + h')) / (P h'))"
   by (simp add: Exp.sep_impl_qq_def)
 
+lemma emb\<^sub>e_def: "emb\<^sub>e P = (\<lambda>h. if P h then 1 else 0)" unfolding Exp.emb_def
+  by (auto simp: bot_ennreal )   
 
 lemma quant_wand_conservative:
   "(P  \<longrightarrow>* Q) h  \<longleftrightarrow> inf 1 (((emb\<^sub>e P) -*\<^sub>e (emb\<^sub>e Q)) h) = 1"
