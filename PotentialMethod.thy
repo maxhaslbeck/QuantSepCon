@@ -13,9 +13,29 @@ text \<open>
 \<close>
 typedef 'a dual_ord = "UNIV :: 'a set" morphisms of_dual_ord to_dual_ord
   by auto
+print_theorems
+
 
 setup_lifting type_definition_dual_ord
 print_theorems
+
+lemma type_definition_dual_ord_inv:
+  "type_definition  to_dual_ord  (of_dual_ord) UNIV"
+  sorry
+
+setup_lifting type_definition_dual_ord_inv
+print_theorems
+(*
+typedef 'a copy = "UNIV::'a set" morphisms of_copy to_copy
+  by auto
+
+lemma type_definition_dual_ord_inv:
+  "type_definition  (to_dual_ord o of_copy)  (to_copy o of_dual_ord) UNIV"
+  sorry
+
+setup_lifting type_definition_dual_ord_inv
+print_theorems
+*)
 
 instantiation dual_ord :: (ord) ord
 begin
@@ -56,6 +76,7 @@ instantiation "dual_ord" :: (inf) sup
 begin
 lift_definition sup_dual_ord :: "('a dual_ord)   \<Rightarrow> 'a dual_ord \<Rightarrow> 'a dual_ord" is
   "\<lambda>a b :: 'a  . inf a b" .
+print_theorems
 instance ..
 end
 
@@ -143,11 +164,10 @@ typ "ennreal dual_ord"
 
 global_interpretation ENNREAL_PLUS: quant_sep_con "(+)" "0::ennreal dual_ord" "(-)"  
   defines scsq = "ENNREAL_PLUS.sep_conj_s_q"
-    and sisq = "ENNREAL_PLUS.sep_impl_s_q"
-    and scq = "ENNREAL_PLUS.sep_conj_q"
+    and sisq = "ENNREAL_PLUS.sep_impl_s_q" 
     and sesq = "ENNREAL_PLUS.sep_empty_s_q"
     and spure = "ENNREAL_PLUS.pure_q"
-    and semb = "ENNREAL_PLUS.emb"
+    and semb = "ENNREAL_PLUS.emb" 
   apply (standard ; transfer)
   subgoal by (auto simp add: bot_ennreal minus_top_ennreal) 
   subgoal by (auto simp add: bot_ennreal minus_top_ennreal)
@@ -166,6 +186,10 @@ global_interpretation ENNREAL_PLUS: quant_sep_con "(+)" "0::ennreal dual_ord" "(
   subgoal by (auto simp add: bot_ennreal minus_top_ennreal) 
   done
 
+context 
+  includes lifting_syntax
+begin 
+
 lemma "((B::ennreal) - C \<ge> A) = (B \<ge>A + C)"
   apply(cases A; cases B; cases C)  apply auto
   oops
@@ -180,15 +204,77 @@ term ENNREAL_PLUS.sep_conj_s_q
 thm ENNREAL_PLUS.sep_conj_s_q_def
 
 definition star_pot_method (infixr "\<star>\<^sub>p" 35) where
-  "star_pot_method == (\<lambda>P Q x. of_dual_ord (ENNREAL_PLUS.sep_conj_s_q (\<lambda>x. to_dual_ord (P x)) (\<lambda>x. to_dual_ord (Q x)) x))"
+  "star_pot_method == ((id ---> to_dual_ord) ---> (id ---> to_dual_ord)---> (id ---> of_dual_ord)) ENNREAL_PLUS.sep_conj_s_q"
+
+lemma "star_pot_method = (\<lambda>P Q x. of_dual_ord (ENNREAL_PLUS.sep_conj_s_q (\<lambda>x. to_dual_ord (P x)) (\<lambda>x. to_dual_ord (Q x)) x))"
+  unfolding star_pot_method_def by (auto intro!: ext simp: map_fun_def o_def)
+
+lemma star_pot_method_alt':
+  "star_pot_method = 
+    (\<lambda>P Q a. case a of (s, h) \<Rightarrow> Inf {P (s, x) + Q (s, y) |x y. h = x + y \<and> x ## y})"
+  unfolding star_pot_method_def ENNREAL_PLUS.sep_conj_s_q_def ENNREAL_PLUS.sep_conj_q_def 
+  apply transfer
+  by (auto simp: map_fun_def o_def)
+
+lemma scsq_transfer[transfer_rule]:   "( (rel_prod (=) (=) ===> pcr_dual_ord (=))
+             ===>            (rel_prod (=) (=) ===> pcr_dual_ord (=))
+               ===>           (rel_prod (=) (=) ===> pcr_dual_ord (=)) )
+           (\<star>\<^sub>p) scsq"
+  unfolding star_pot_method_alt' ENNREAL_PLUS.sep_conj_s_q_def  ENNREAL_PLUS.sep_conj_q_def
+  by transfer_prover    
+
+
+lemma star_pot_method_alt:
+  "(P \<star>\<^sub>p Q) = (\<lambda>(s,h). Inf { P(s,x) + Q(s,y) | x y. h=x+y \<and> x ## y})"
+  unfolding star_pot_method_alt' by simp
+
+
+(*
+lift_definition star_pot_method' :: "('a \<times> 'b::{sep_algebra} \<Rightarrow> ennreal copy)
+                   \<Rightarrow> ('a \<times> 'b \<Rightarrow> ennreal copy) \<Rightarrow> 'a \<times> 'b \<Rightarrow> ennreal copy"  is ENNREAL_PLUS.sep_conj_s_q *)
+ 
 
 definition wand_pot_method (infixr "-\<star>\<^sub>p" 35) where
-  "wand_pot_method == (\<lambda>P Q x. of_dual_ord (ENNREAL_PLUS.sep_impl_s_q (\<lambda>x. to_dual_ord (P x)) (\<lambda>x. to_dual_ord (Q x)) x))"
+  "wand_pot_method == ((id ---> to_dual_ord) ---> (id ---> to_dual_ord)---> (id ---> of_dual_ord)) ENNREAL_PLUS.sep_impl_s_q"
+  
+
+lemma wand_pot_method_alt': 
+  "(-\<star>\<^sub>p) = (\<lambda>P Q a. case a of (s, h) \<Rightarrow> SUP h':{h'. h ## h' \<and> (P (s, h') < top \<or> Q (s, h + h') < top) \<and> (bot < P (s, h') \<or> bot < Q (s, h + h'))}. Q (s, h + h') - P (s, h'))"
+  unfolding wand_pot_method_def ENNREAL_PLUS.sep_impl_s_q_def ENNREAL_PLUS.sep_impl_qq_def
+  apply transfer
+  by (auto simp: map_fun_def o_def)
+    
+term sisq
+lemma sisq_transfer[transfer_rule]:
+  "((rel_prod (=) (=) ===> pcr_dual_ord (=)) ===> (rel_prod (=) (=) ===> pcr_dual_ord (=))
+       ===> rel_prod (=) (=) ===> pcr_dual_ord (=)) (-\<star>\<^sub>p) sisq"
+  unfolding ENNREAL_PLUS.sep_impl_s_q_def  ENNREAL_PLUS.sep_impl_qq_def  wand_pot_method_alt'
+  by transfer_prover 
+
+lemma wand_pot_method_alt:
+  "(P -\<star>\<^sub>p Q) = (\<lambda>(s,h). SUP h': { h'. h ## h' \<and> (bot < P(s,h') \<or> bot < Q(s,h+h') )
+                                \<and> ( P(s,h') < top \<or> Q(s,h+h') < top)}. 
+                                    (Q (s,h + h')) - P (s,h') )"
+  unfolding wand_pot_method_alt'    by(force intro: SUP_cong)
 
 
-
-definition "sep_empty\<^sub>p \<equiv> (%sh. of_dual_ord (ENNREAL_PLUS.sep_empty_s_q sh))" 
 definition "emb\<^sub>p \<equiv> (\<lambda>P sh. of_dual_ord (ENNREAL_PLUS.emb P sh))" 
+
+lemma emb\<^sub>p_alt:"emb\<^sub>p = (\<lambda>P h. if P h then 0 else top)" 
+  by (force simp: emb\<^sub>p_def ENNREAL_PLUS.emb_def zero_dual_ord.rep_eq  bot_dual_ord.rep_eq  )
+   
+lemma emb\<^sub>p_alt2: "emb\<^sub>p = (\<lambda>P sh. (if P sh then 0 else \<infinity>))"
+  unfolding emb\<^sub>p_def ENNREAL_PLUS.emb_def apply transfer 
+  unfolding infinity_ennreal_def
+  by (auto  )  
+
+definition "sep_empty\<^sub>p \<equiv> (%sh. of_dual_ord (ENNREAL_PLUS.sep_empty_s_q sh))"
+
+
+lemma sep_empty\<^sub>p_alt: "sep_empty\<^sub>p = (\<lambda>(s, h). emb\<^sub>p (\<lambda>h. h = 0) h)"
+  by (auto simp: sep_empty\<^sub>p_def emb\<^sub>p_def ENNREAL_PLUS.sep_empty_s_q_def
+                    ENNREAL_PLUS.sep_empty_q_def  )
+
 
 
 
@@ -205,69 +291,46 @@ lemma pure\<^sub>e_alt: "pure\<^sub>p X \<longleftrightarrow> (\<forall>s h1 h2.
   done
 
 
-context 
-  includes lifting_syntax
-begin 
 
-
-(* why do I need these ? ? *)
-
+(* why do I need these ? ? *) 
 lemma lift_leq[transfer_rule]:
-  "((rel_prod (=) (=) ===> pcr_dual_ord (=)) ===>
-         (rel_prod (=) (=) ===> pcr_dual_ord (=)) ===> (=)) (\<le>) (\<le>)"
-  sorry
+  assumes [transfer_rule]: "bi_total R"
+  shows " ((R ===> pcr_dual_ord (=)) ===>
+         (R ===> pcr_dual_ord (=)) ===> (=)) (\<ge>) (\<le>)"
+  unfolding le_fun_def by transfer_prover  
 
-lemma lift_sup[transfer_rule]:  "((rel_prod (=) (=) ===> pcr_dual_ord (=))
-     ===> (rel_prod (=) (=) ===> pcr_dual_ord (=))
-      ===> rel_prod (=) (=) ===> pcr_dual_ord (=)) sup sup"
-  sorry
 
+(* R is rel_prod (=) (=) *)
+lemma lift_sup[transfer_rule]:  "((R ===> pcr_dual_ord (=))
+     ===> (R ===> pcr_dual_ord (=))
+      ===> R ===> pcr_dual_ord (=)) inf sup"
+  unfolding sup_fun_def inf_fun_def by transfer_prover  
+
+thm pcr_dual_ord_def
+ 
 
 (* these are new *)
 
 
-
+term spure
 lemma spure_transfer[transfer_rule]: 
   "((rel_prod (=) (=) ===> pcr_dual_ord (=)) ===> (=)) pure\<^sub>p spure"
-  sorry
+  unfolding   ENNREAL_PLUS.pure_q_def  pure\<^sub>e_alt
+  by transfer_prover  
 
+term semb
+lemma semb_transfer[transfer_rule]:
+    "((R ===> (=)) ===> R ===> pcr_dual_ord (=)) emb\<^sub>p semb"
+  unfolding ENNREAL_PLUS.emb_def emb\<^sub>p_alt
+  by transfer_prover  
+
+term sesq
 lemma sesq_transfer[transfer_rule]: 
       "(rel_prod (=) (=) ===> pcr_dual_ord (=)) sep_empty\<^sub>p sesq" 
-  sorry
+  unfolding   ENNREAL_PLUS.sep_empty_s_q_def ENNREAL_PLUS.sep_empty_q_def sep_empty\<^sub>p_alt
+  by transfer_prover  
 
-lemma semb_transfer[transfer_rule]:
-    "((rel_prod (=) (=) ===> (=)) ===> rel_prod (=) (=) ===> pcr_dual_ord (=)) emb\<^sub>p semb"
-  sorry
-
-lemma sisq_transfer[transfer_rule]:
-  "((rel_prod (=) (=) ===> pcr_dual_ord (=)) ===> (rel_prod (=) (=) ===> pcr_dual_ord (=))
-       ===> rel_prod (=) (=) ===> pcr_dual_ord (=)) (-\<star>\<^sub>p) sisq"
-  sorry
-  
-lemma scsq_transfer[transfer_rule]:   "( (rel_prod (=) (=) ===> pcr_dual_ord (=))
-             ===>            (rel_prod (=) (=) ===> pcr_dual_ord (=))
-               ===>           (rel_prod (=) (=) ===> pcr_dual_ord (=)) )
-           (\<star>\<^sub>p) scsq"
-  apply(simp add: rel_fun_def scsq_def[abs_def])
-  apply (auto simp:  pcr_dual_ord_def OO_def star_pot_method_def  cr_dual_ord_def 
-                   )
-  apply(rule arg_cong[where f=of_dual_ord])
-proof (goal_cases)
-  case (1 x y xa ya a b)
-  have "ENNREAL_PLUS.sep_conj_s_q (\<lambda>xa. to_dual_ord (x xa)) (\<lambda>x. to_dual_ord (xa x)) (a, b)
-        = ENNREAL_PLUS.sep_conj_s_q (\<lambda>xa. to_dual_ord (x (fst xa, snd xa))) (\<lambda>x. to_dual_ord (xa (fst x, snd x))) (a, b)"
-    by auto
-  also have "\<dots> = ENNREAL_PLUS.sep_conj_s_q (\<lambda>xa. to_dual_ord (of_dual_ord (y (fst xa, snd xa))))
-                           (\<lambda>x. to_dual_ord (xa (fst x, snd x))) (a, b)"
-    using 1(1) by metis
-  also have "\<dots> = ENNREAL_PLUS.sep_conj_s_q (\<lambda>xa. to_dual_ord (of_dual_ord (y (fst xa, snd xa))))
-                           (\<lambda>x. to_dual_ord (of_dual_ord (ya (fst x, snd x)))) (a, b)"
-    using 1(2) by metis
-  also have "\<dots> = ENNREAL_PLUS.sep_conj_s_q y ya (a, b)"
-    apply(subst dual_ord.of_dual_ord_inverse)
-    apply(subst dual_ord.of_dual_ord_inverse)  by auto 
-  finally show ?case by (simp add: scsq_def)
-qed 
+   
 
 term pcr_dual_ord 
 
@@ -286,36 +349,8 @@ term cr_dual_ord
 end
 term cr_dual_ord
 term pcr_dual_ord
-
-lemma star_pot_method_alt:
-  "(P \<star>\<^sub>p Q) = (\<lambda>(s,h). Inf { P(s,x) + Q(s,y) | x y. h=x+y \<and> x ## y})"
-  unfolding ENNREAL_PLUS.sep_conj_s_q_def
-        ENNREAL_PLUS.sep_conj_q_def star_pot_method_def by transfer auto 
-
-lemma wand_pot_method_alt:
-  "(P -\<star>\<^sub>p Q) = (\<lambda>(s,h). SUP h': { h'. h ## h' \<and> (bot < P(s,h') \<or> bot < Q(s,h+h') )
-                                \<and> ( P(s,h') < top \<or> Q(s,h+h') < top)}. 
-                                    (Q (s,h + h')) - P (s,h') )"
-  unfolding ENNREAL_PLUS.sep_impl_qq_def ENNREAL_PLUS.sep_impl_s_q_def wand_pot_method_def
-  apply(transfer) apply (rule ext) apply auto by metis
-
-lemma sep_empty\<^sub>p_alt: "sep_empty\<^sub>p = (\<lambda>(s, h). emb\<^sub>p (\<lambda>h. h = 0) h)"
-  by (auto simp: sep_empty\<^sub>p_def emb\<^sub>p_def ENNREAL_PLUS.sep_empty_s_q_def
-                    ENNREAL_PLUS.sep_empty_q_def  )
-lemma emb\<^sub>p_alt: "emb\<^sub>p = (\<lambda>P sh. (if P sh then 0 else \<infinity>))"
-  unfolding emb\<^sub>p_def ENNREAL_PLUS.emb_def apply transfer 
-  unfolding infinity_ennreal_def
-  by (auto  )  
-
  
-lemma 
-  fixes X :: "_ * 'a::{sep_algebra} \<Rightarrow> ennreal"
-  shows "(X \<star>\<^sub>p Y) = (Y \<star>\<^sub>p X)"
-  apply transfer
-  apply(rule ext)
-  unfolding star_pot_method_def
-  apply(rule arg_cong[where f=of_dual_ord])
-  apply(subst ENNREAL_PLUS.sep_conj_s_q_commute) by simp
+ 
 
 lemmas star_pot_method_commute = ENNREAL_PLUS.sep_conj_s_q_commute[untransferred]
 lemmas star_pot_method_neutral =  ENNREAL_PLUS.sep_conj_s_q_neutral[untransferred]
@@ -325,19 +360,7 @@ lemmas star_pot_method_commute_c = ENNREAL_PLUS.sep_conj_q_left_commute_s[untran
 
 
 lemmas theorem_3_6_s_1= ENNREAL_PLUS.theorem_3_6_s(1)[untransferred]
-
-lemma " scsq P (sup Q R) = (\<lambda>s. sup (scsq P Q s) (scsq P R s))"
-  apply transfer_start
-  apply transfer_step
-  apply transfer_step 
-         apply transfer_step
-  defer
-  apply transfer_step
-  apply transfer_step
-  apply transfer_step
-     apply transfer_step
-    apply transfer_step defer
- (* whaaat *) oops
+ 
 
 
 lemmas theorem_3_6_s_2 = ENNREAL_PLUS.theorem_3_6_s(2)[untransferred] 
