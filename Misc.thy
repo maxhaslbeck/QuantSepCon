@@ -1,6 +1,5 @@
 theory Misc
-  imports
-  Sep_Algebra_Add
+  imports   Sep_Algebra_Add
   "HOL-Library.Extended_Nonnegative_Real"
 begin
 

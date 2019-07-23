@@ -4,8 +4,7 @@
   Author: Kevin Batz
 *)
 theory QuantSepCon
-  imports
-    "Sep_Algebra_Add"
+  imports 
     "Separation_Algebra.Separation_Algebra" "HOL-Library.Extended_Nat"
     "HOL-Library.Extended_Nonnegative_Real" 
     Misc        
@@ -18,7 +17,7 @@ section \<open>Quantitative Separating Connectives\<close>
  
 
 subsection \<open>The Locale quant_sep_con\<close>
-
+print_classes
 locale quant_sep_con =  comm_monoid oper neutr
   for  
     oper :: "'b::{complete_lattice} \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>*" 70)
@@ -27,23 +26,37 @@ locale quant_sep_con =  comm_monoid oper neutr
     divide :: "'b \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>div" 70)
   assumes 
       \<comment>\<open>Facts about div\<close>
-    divide_neutral: "\<And>x::'b. x \<^bold>div \<^bold>1 = x"   
-    and divide_bot: "\<And>x::'b. x > bot \<Longrightarrow> x \<^bold>div bot = top"   
-    and top_divide:  "\<And>x. x < top \<Longrightarrow>  top \<^bold>div x = top"
+    divide_neutral: "\<And>x::'b. x \<^bold>div \<^bold>1 = x"   (* maybe \<le> suffices *)
+    and top_divide:  "\<And>x. x < top \<Longrightarrow>  top \<^bold>div x = top" (* superfluous *)
+    and divide_bot: "\<And>x::'b. x > bot \<Longrightarrow> x \<^bold>div bot = top"   (* superfluous *)
     and divide_right_mono_general: "\<And>a b c. a \<le> b \<Longrightarrow> a \<^bold>div c \<le> b \<^bold>div c" 
     and divide_right_antimono_general: "\<And>a b c. c \<le> b \<Longrightarrow> a \<^bold>div b \<le> a \<^bold>div c" 
       \<comment>\<open>Facts about oper\<close>
-    and mult_bot: "\<And>x. x \<^bold>* bot = bot"   
+     and mult_bot: "\<And>x. x \<^bold>* bot = bot"    (* superfluous *)
     and SUP_mult_left': "\<And>c A. c \<^bold>* Sup A = Sup (((\<^bold>*) c) ` A)"
-    and oper_mono: "\<And>a b c d. a \<le> b \<Longrightarrow> c \<le> d \<Longrightarrow> a \<^bold>* c \<le> b \<^bold>* d"
+    and oper_mono: "\<And>a b c d. a \<le> b \<Longrightarrow> c \<le> d \<Longrightarrow> a \<^bold>* c \<le> b \<^bold>* d" (* superfluous *)
     \<comment> \<open>oper and divide are "adjoint" = The essence of equation 79\<close>
     and div_mult_adjoint:
-    "\<And>A B C :: 'b. \<lbrakk>(bot < C \<or> bot < B ) ; (C < top \<or> B < top) \<rbrakk>
-                   \<Longrightarrow> (A \<le> B \<^bold>div C) \<longleftrightarrow> A \<^bold>* C \<le> B"
+    "\<And>A B C :: 'b.  \<lbrakk>(bot < C \<or> bot < B ) ; (C < top \<or> B < top) \<rbrakk> \<Longrightarrow>  (A \<le> B \<^bold>div C) \<longleftrightarrow> A \<^bold>* C \<le> B"
     \<comment> \<open>bot is not neutral\<close>
     and FF: "bot < \<^bold>1" 
-begin  
+begin   
+(*
+lemma mult_bot: "\<And>x. x \<^bold>* bot = bot"   
+  using SUP_mult_left'  
+  by (metis SUP_empty Sup_empty)  
 
+lemma divide_bot: "\<And>x::'b. x > bot \<Longrightarrow> x \<^bold>div bot = top"   
+  using  mult_bot div_mult_adjoint top_divide 
+  by (metis bot.extremum le_less_trans nn top.extremum_unique) 
+
+    lemma top_divide':  "\<And>x. x < top \<Longrightarrow>  top \<^bold>div x = top"
+      
+      by (meson bot.extremum dual_order.strict_trans2 eq_iff quant_sep_con.div_mult_adjoint quant_sep_con_axioms top_greatest) 
+
+lemma oper_mono: "\<And>a b c d. a \<le> b \<Longrightarrow> c \<le> d \<Longrightarrow> a \<^bold>* c \<le> b \<^bold>* d"
+  using SUP_mult_left' sorry
+*)
 lemma oper_left_mono: "\<And>a b c d :: 'b. a \<le> b   \<Longrightarrow> c \<^bold>* a \<le> c \<^bold>* b"
   apply(rule oper_mono) by auto 
 
