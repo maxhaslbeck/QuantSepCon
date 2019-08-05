@@ -146,7 +146,7 @@ lemma INF_ennreal_add_const_local2:
   subgoal 
     using continuous_at_Inf_mono[of "\<lambda>x. x + c" "f`A"]
     using continuous_add[of "at_right (Inf (f ` A))", of "\<lambda>x. x" "\<lambda>x. c"]
-    by (auto simp: mono_def) 
+    by (auto simp: image_comp mono_def) 
   done
 
 
@@ -450,7 +450,7 @@ instance apply(standard)
     by (metis INF_greatest ennreal_inv.collapse less_eq_ennreal_inv.simps) 
   subgoal   by auto
   subgoal   by auto
-  subgoal for c f I apply(cases c) by (simp add: thee_times INF_ennreal_const_add')   
+  subgoal for c f I apply(cases c) by (simp add: image_comp thee_times INF_ennreal_const_add')   
   done
 end
  

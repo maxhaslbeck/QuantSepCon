@@ -70,7 +70,8 @@ lemma SUP_times_distrib2_general:
 
 
 lemma SUP_mult_left: "\<And>c f. c \<^bold>* (SUP i:I. f i) = (SUP i:I. c \<^bold>* f i)"
-  apply(subst SUP_mult_left') by simp
+  apply(subst SUP_mult_left')  
+  by (simp add: image_image)   
 
 
 lemma SUP_mult_right: "(SUP i:I. f i) \<^bold>* c = (SUP i:I. f i \<^bold>* c)"
@@ -319,8 +320,9 @@ proof -
           apply(intro INF_lower2[where i=h']) apply simp by (simp add: emb_def)
         then show ?case using 1(1) FF by auto
       qed 
-      done
-    subgoal   by (auto simp: emb_def INF_constant) 
+      done term Inf
+    subgoal  
+      by(auto simp add:  emb_def INF_constant cong: INF_cong_simp  ) 
     done
   also have "\<dots> \<longleftrightarrow> (P  \<longrightarrow>* Q) h" unfolding sep_impl_def by auto
   finally show "(P  \<longrightarrow>* Q) h \<longleftrightarrow> inf \<^bold>1 ((P -*q (emb Q)) h) = \<^bold>1" by simp
@@ -551,7 +553,7 @@ lemma emb_or: "emb (X or Y) = (sup (emb X) (emb Y))"
   unfolding emb_def apply(rule ext) unfolding  sup_fun_def by auto 
 
 
-subsubsection \<open>monotonicity of @{term "( **q)"}\<close>
+subsubsection \<open>monotonicity of @{term "(**q)"}\<close>
 
 text \<open>theorem 3.7\<close>
  

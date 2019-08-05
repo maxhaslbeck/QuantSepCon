@@ -122,7 +122,7 @@ lemma eq79_ennreal: fixes A B C :: ennreal
               ennreal_mult_eq_top_iff mult_eq_0_iff nn nn_bot not_le)  
   done
 
-interpretation Exp: quant_sep_con "( * )" "1::ennreal"  "(/)"   
+interpretation Exp: quant_sep_con "(*)" "1::ennreal"  "(/)"   
   apply standard subgoal  
     by (simp add: ennreal_div_one)  
   subgoal using ennreal_top_divide by simp
@@ -199,7 +199,7 @@ lemma sep_conj_e_left_commute:
 
 lemmas sep_conj_e_c = sep_conj_e_comm sep_conj_e_left_commute
 
-subsubsection \<open>monotonicity of @{term "( **\<^sub>e)"} and  @{term "(-*\<^sub>e)"}\<close>
+subsubsection \<open>monotonicity of @{term "(**\<^sub>e)"} and  @{term "(-*\<^sub>e)"}\<close>
 
 lemma sep_conj_e_mono:
   fixes X X' :: "'a::{sep_algebra} \<Rightarrow> ennreal"
@@ -213,7 +213,7 @@ lemma sep_impl_e_mono:
   shows "P' \<le> P \<Longrightarrow> Y \<le> Y' \<Longrightarrow> (P -*\<^sub>e Y) \<le> (P' -*\<^sub>e Y')"  
   using Exp.sep_impl_q_mono by auto 
 
-subsubsection \<open>adjointness of @{term "( **\<^sub>e)"} and  @{term "(-*\<^sub>e)"}\<close>
+subsubsection \<open>adjointness of @{term "(**\<^sub>e)"} and  @{term "(-*\<^sub>e)"}\<close>
 
 
 lemma sep_conj_sep_impl_e_adjoint:
