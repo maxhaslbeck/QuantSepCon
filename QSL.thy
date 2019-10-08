@@ -12,7 +12,7 @@ definition emp :: "stack \<times> heap \<Rightarrow> ennreal" ("[emp]") where
   "emp \<equiv> (\<lambda>(s,h). if dom (map_of_heap h) = {} then 1 else 0)"
 
 lemma emp_emb: "emp = emb\<^sub>e (empb)"
-  unfolding emp_def emb\<^sub>e_def empb_def by auto 
+  unfolding emp_def emb\<^sub>e_alt empb_def by auto 
 
 subsection \<open>the "points-to predicate"\<close>
 
@@ -21,7 +21,7 @@ definition pt :: "(stack \<Rightarrow> addrs) \<Rightarrow> (stack \<Rightarrow>
   "pt e e' \<equiv> (\<lambda>(s,h). if dom (map_of_heap h) = {e s} \<and> h (e s) = TRIV (e' s) then 1 else 0)"
 
 lemma pt_emb: "pt e e' = emb\<^sub>e (ptb e e')"
-  unfolding pt_def emb\<^sub>e_def ptb_def by auto 
+  unfolding pt_def emb\<^sub>e_alt ptb_def by auto 
 
 definition pts :: "(stack \<Rightarrow> addrs) \<Rightarrow> ((stack \<Rightarrow> val) list) \<Rightarrow> stack \<times> heap \<Rightarrow>  ennreal"
         ("[_ \<mapsto> _]" [56,51] 56)  where
@@ -29,7 +29,7 @@ definition pts :: "(stack \<Rightarrow> addrs) \<Rightarrow> ((stack \<Rightarro
                          then 1 else 0)"
 
 lemma pts_emb: "pts e es  = emb\<^sub>e (ptsb e es)"
-  unfolding pts_def emb\<^sub>e_def ptsb_def by auto 
+  unfolding pts_def emb\<^sub>e_alt ptsb_def by auto 
 
 subsection \<open>the "allocated pointer predicate"\<close>
 definition ptany :: "(stack \<Rightarrow> addrs)  \<Rightarrow> stack \<times> heap \<Rightarrow>  ennreal" 
@@ -37,7 +37,7 @@ definition ptany :: "(stack \<Rightarrow> addrs)  \<Rightarrow> stack \<times> h
   "ptany e \<equiv> (\<lambda>(s,h).  if   dom (map_of_heap h) = {e s}  then 1 else 0)"
 
 lemma ptany_emb: "ptany e  = emb\<^sub>e (ptanyb e )"
-  unfolding ptany_def emb\<^sub>e_def ptanyb_def by auto 
+  unfolding ptany_def emb\<^sub>e_alt ptanyb_def by auto 
 
 
 subsection \<open>the "contains-pointer predicates"\<close>
