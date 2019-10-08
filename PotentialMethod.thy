@@ -118,9 +118,10 @@ lemmas star_pot_method_commute_c = ENNREAL_PLUS.sep_conj_q_left_commute_s[folded
 
 
 lemma fixes P :: "_ * ('a:: sep_algebra) \<Rightarrow> ennreal"
-  shows   "(P \<star>\<^sub>p sup Q R) = sup (P \<star>\<^sub>p Q) (P \<star>\<^sub>p R)"
-  using   ENNREAL_PLUS.theorem_3_6_s(1)[folded star_pot_method_def, where P=P and Q=Q and R=R  ]   
-  unfolding sup_fun_def apply(intro ext)  apply simp oops
+  shows  theorem_3_6_s_1: "(P \<star>\<^sub>p inf Q R) = inf (P \<star>\<^sub>p Q) (P \<star>\<^sub>p R)" 
+  unfolding inf_fun_def 
+  using ENNREAL_PLUS.theorem_3_6_s(1)[folded star_pot_method_def, where P=P and Q=Q and R=R  ]
+  by simp
     
  
 
