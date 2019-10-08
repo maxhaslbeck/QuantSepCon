@@ -75,13 +75,12 @@ lemma emb_alt: "(\<lambda>h. emb \<phi> (a, h)) = emb (\<lambda>h. \<phi> (a,h))
 lemma theorem_3_6_s:
   fixes P Q R :: "_ \<times> 'a \<Rightarrow> 'b"
   shows 
-  "P \<star> sup Q R = (\<lambda>s. sup ((P \<star> Q) s) ((P \<star> R) s))"
+  "P \<star> fsup Q R = (\<lambda>s. sup ((P \<star> Q) s) ((P \<star> R) s))"
   (*  "(P \<star> (\<lambda>s. Q s + R s)) \<le> (\<lambda>s. (P \<star> Q) s + (P \<star> R) s)" *)
   "( (emb \<phi>) \<star> (\<lambda>h. Q h \<^bold>* R h)) h \<le> ((emb \<phi>) \<star> Q) h \<^bold>* ((emb \<phi>) \<star> R) h"
   unfolding sep_conj_s_q_def
   subgoal  apply(rule ext)  
-    subgoal for s apply(cases s) apply simp 
-      apply(subst sup_fun_def[symmetric])
+    subgoal for s apply(cases s) apply simp  
       apply(subst theorem_3_6(1)) by auto 
     done 
   subgoal    apply(cases h) apply simp     
@@ -92,30 +91,22 @@ lemma theorem_3_6_s:
 
 
 lemma sep_impl_s_q_Rmono:
-    "X \<le> Y \<Longrightarrow> (A -\<star> X) sh \<le> (A -\<star> Y) sh" 
+    "(\<And>h. X h \<le> Y h) \<Longrightarrow> (A -\<star> X) sh \<le> (A -\<star> Y) sh" 
   unfolding sep_impl_s_q_def
   apply(cases sh) apply simp 
-  apply(rule sep_impl_q_monoR[THEN le_funD]) 
+  apply(rule sep_impl_q_monoR) 
   by (auto simp: le_fun_def emb_def)  
 
 lemma sep_impl_s_q_mono:
-    " B \<le> A \<Longrightarrow> X \<le> Y \<Longrightarrow> (A -\<star> X) sh \<le> (B -\<star> Y) sh" 
+    "(\<And>sh. B sh \<le> A sh) \<Longrightarrow> (\<And>sh. X sh \<le> Y sh) \<Longrightarrow> (A -\<star> X) sh \<le> (B -\<star> Y) sh" 
   unfolding sep_impl_s_q_def
-  apply(cases sh) apply simp 
-  apply(rule sep_impl_q_mono[THEN le_funD]) 
-  by (auto simp: le_fun_def emb_def) 
+  apply(cases sh) by(auto intro!: sep_impl_q_mono)
   
 
 lemma sep_conj_s_q_mono:
-    "A \<le> B \<Longrightarrow> X \<le> Y \<Longrightarrow> (A \<star> X) sh \<le> (B \<star> Y) sh"
+    "(\<And>sh. A sh \<le> B sh) \<Longrightarrow> (\<And>sh. X sh \<le> Y sh) \<Longrightarrow> (A \<star> X) sh \<le> (B \<star> Y) sh"
     unfolding sep_conj_s_q_def
-  apply(cases sh) apply simp
-  apply(rule sep_conj_q_mono[THEN le_funD]) 
-  by (auto simp: le_fun_def emb_def) 
-
-lemma sep_conj_s_q_mono':
-    "A \<le> B \<Longrightarrow> X \<le> Y \<Longrightarrow>   A\<star> X   \<le>   B\<star> Y  "
-  apply(rule le_funI) apply(rule sep_conj_s_q_mono) by auto
+  apply(cases sh) by (auto intro: sep_conj_q_mono) 
 
 subsubsection \<open>Adjointness\<close>
 
@@ -129,7 +120,7 @@ lemma adjoint_general'2:
   using adjoint_general  unfolding le_fun_def by blast
 
 lemma adjoint_general_s:
-  shows "(X \<star> P) \<le> Y \<longleftrightarrow> X \<le> (P -\<star> Y)" 
+  shows "(\<forall>h. (X \<star> P) h \<le> Y h) \<longleftrightarrow> (\<forall>h. X h \<le> (P -\<star> Y) h)" 
   unfolding sep_conj_s_q_def sep_impl_s_q_def
   unfolding le_fun_def apply auto
   subgoal     apply(rule adjoint_general'1) by auto 
@@ -137,12 +128,12 @@ lemma adjoint_general_s:
   done 
 
 lemma quant_modus_ponens_general_s:
-  shows "( P \<star> (P -\<star> X)) \<le> X"
+  shows "( P \<star> (P -\<star> X)) sh \<le> X sh"
 proof -
-  have " (P -\<star> X) \<le> (P -\<star> X)" by simp
-  then have "(((P -\<star> X) \<star>  P) \<le> X)"
-    using adjoint_general_s[symmetric, where X="(P -\<star> X)" and Y=X]  by auto
-  then show ?thesis apply(subst sep_conj_s_q_commute) .
+  have "(\<forall>sh. (P -\<star> X) sh \<le> (P -\<star> X) sh)" by simp
+  then have "(\<forall>sh. (((P -\<star> X) \<star>  P) sh \<le> X sh))"
+    using adjoint_general_s[symmetric, where X="(P -\<star> X)" and P=P and Y=X]  by auto
+  then show ?thesis apply(subst sep_conj_s_q_commute) by blast
 qed 
 
 subsubsection \<open>Algebraic Laws for * under purity\<close>
@@ -171,9 +162,10 @@ lemma pure_q_normto0: "pure_q X \<Longrightarrow> X (s,h) = X(s,0)"
 lemma  theorem_3_11_1:
   assumes "pure_q X"
   shows      
-  "(\<lambda>sh. X sh \<^bold>* Y sh) \<le> X \<star> Y"
+  "X sh \<^bold>* Y sh \<le> (X \<star> Y) sh"
   unfolding sep_conj_s_q_def sep_conj_q_alt
-  apply(rule le_funI) apply auto
+  apply(cases sh)
+  apply auto
   subgoal for s h 
     apply(rule SUP_upper2[where i="(0,h)"])
       using assms[THEN pure_qD] apply auto  
@@ -194,12 +186,12 @@ proof -
   {
     fix s h 
   have "(sep_conj_s_q (\<lambda>sh. X sh \<^bold>* Y sh) Z) (s,h)
-      =  (SUP (x, y):{(x, y). h = x + y \<and> x ## y}. X (s, x) \<^bold>* Y (s, x) \<^bold>* Z (s, y))"
+      =  (SUPR {(x, y). h = x + y \<and> x ## y} (\<lambda>(x, y). X (s, x) \<^bold>* Y (s, x) \<^bold>* Z (s, y)))"
     apply auto unfolding sep_conj_s_q_def 
     apply simp unfolding sep_conj_q_alt by auto
-  also have "\<dots> = (SUP (x, y):{(x, y). h = x + y \<and> x ## y}. X (s, h) \<^bold>* Y (s, x) \<^bold>* Z (s, y))"
+  also have "\<dots> = (SUPR {(x, y). h = x + y \<and> x ## y} (\<lambda>(x, y). X (s, h) \<^bold>* Y (s, x) \<^bold>* Z (s, y)))"
     apply(subst pure_q_norm[OF assms, where h'=h]) by simp
-  also have "\<dots> = X (s, h) \<^bold>* (SUP (x, y):{(x, y). h = x + y \<and> x ## y}.  Y (s, x) \<^bold>* Z (s, y))"
+  also have "\<dots> = X (s, h) \<^bold>* (SUPR {(x, y). h = x + y \<and> x ## y} (\<lambda>(x, y).  Y (s, x) \<^bold>* Z (s, y)))"
     by(auto simp: SUP_mult_left  assoc intro!: SUP_cong) 
   also have "\<dots> = X (s, h) \<^bold>* (sep_conj_s_q Y Z) (s,h)"
     apply auto unfolding sep_conj_s_q_def 
