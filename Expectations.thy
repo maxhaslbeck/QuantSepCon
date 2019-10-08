@@ -122,7 +122,7 @@ lemma eq79_ennreal: fixes A B C :: ennreal
               ennreal_mult_eq_top_iff mult_eq_0_iff nn nn_bot not_le)  
   done
 
-interpretation Exp: quant_sep_con "(*)" "1::ennreal"  "(/)"   
+interpretation Exp: quant_sep_con Inf Sup inf "(\<le>)" "(<)" sup top bot "(*)" "1::ennreal"  "(/)"   
   apply standard subgoal  
     by (simp add: ennreal_div_one)  
   subgoal using ennreal_top_divide by simp
@@ -145,31 +145,31 @@ interpretation Exp: quant_sep_con "(*)" "1::ennreal"  "(/)"
 
 subsubsection \<open>Star and Magic Wand\<close>
 
-abbreviation sep_conj_e (infixr "**\<^sub>e" 35) where "sep_conj_e == Exp.sep_conj_q"
-abbreviation sep_impl_e (infixr "-*\<^sub>e" 35) where "sep_impl_e == Exp.sep_impl_qq"
-abbreviation "sep_empty\<^sub>e \<equiv> Exp.sep_empty_q"
-abbreviation "emb\<^sub>e \<equiv> Exp.emb" 
+definition sep_conj_e (infixr "**\<^sub>e" 35) where "sep_conj_e == Exp.sep_conj_q"
+definition sep_impl_e (infixr "-*\<^sub>e" 35) where "sep_impl_e == Exp.sep_impl_qq"
+definition "sep_empty\<^sub>e \<equiv> Exp.sep_empty_q"
+definition "emb\<^sub>e \<equiv> Exp.emb" 
  
-lemma sep_conj_e_def:
+lemma sep_conj_e_alt:
   "(P **\<^sub>e Q) = (\<lambda>h. Sup { P x * Q y | x y. h=x+y \<and> x ## y})"
-  by (simp add: Exp.sep_conj_q_def)
+  by (simp add: sep_conj_e_def Exp.sep_conj_q_def)
 
-lemma sep_impl_e_def:
+lemma sep_impl_e_alt:
   "(P -*\<^sub>e Q) = (\<lambda>h. INF h': { h'. h ## h' \<and> (bot < P h' \<or> bot < Q (h+h') )
                                 \<and> (P h' < top \<or> Q (h+h') < top)}. 
                                     (Q (h + h')) / (P h'))"
-  by (simp add: Exp.sep_impl_qq_def)
+  by (simp add: Exp.sep_impl_qq_def sep_impl_e_def)
 
-lemma emb\<^sub>e_def: "emb\<^sub>e P = (\<lambda>h. if P h then 1 else 0)" unfolding Exp.emb_def
-  by (auto simp: bot_ennreal )   
+lemma emb\<^sub>e_alt: "emb\<^sub>e P = (\<lambda>h. if P h then 1 else 0)" unfolding emb\<^sub>e_def Exp.emb_def
+  by (auto simp: bot_ennreal)   
 
 lemma quant_wand_conservative:
   "(P  \<longrightarrow>* Q) h  \<longleftrightarrow> inf 1 (((emb\<^sub>e P) -*\<^sub>e (emb\<^sub>e Q)) h) = 1"
-  using Exp.quant_wand_conservative by blast
+  using Exp.quant_wand_conservative unfolding emb\<^sub>e_def sep_impl_e_def by blast
 
 lemma sep_impl_q_alt_general:
   "inf 1 ((emb\<^sub>e P -*\<^sub>e Q) h) = inf 1 (INF h': { h'. h ## h' \<and> P h'}. Q (h + h'))"
-  using Exp.sep_impl_q_alt_general by blast 
+  using Exp.sep_impl_q_alt_general unfolding emb\<^sub>e_def sep_impl_e_def by blast 
 
 
 
@@ -179,23 +179,23 @@ lemma sep_conj_e_assoc:
   fixes x y z :: "'a::{sep_algebra} \<Rightarrow> ennreal"
   shows 
    "(x **\<^sub>e (y **\<^sub>e z))  = ((x **\<^sub>e y) **\<^sub>e z)"
-  using Exp.star_assoc by blast
+  using Exp.star_assoc[folded  sep_conj_e_def] by blast
 
 lemma sep_conj_e_comm:
   fixes X Y :: "'a::{sep_algebra} \<Rightarrow> ennreal"
   shows  "(X **\<^sub>e Y) = (Y **\<^sub>e X)"
-  using Exp.star_comm by blast
+  using Exp.star_comm[folded  sep_conj_e_def] by blast
 
 lemma sep_conj_e_emp_neutral:
   fixes X   :: "'a::{sep_algebra} \<Rightarrow> ennreal"
   shows "(X **\<^sub>e sep_empty\<^sub>e) = X"
         "(sep_empty\<^sub>e **\<^sub>e X) = X"
-  using Exp.emp_neutral by auto
+  using Exp.emp_neutral[folded  sep_conj_e_def sep_empty\<^sub>e_def] by auto
 
 lemma sep_conj_e_left_commute:
   fixes P Q R :: "'a::{sep_algebra} \<Rightarrow> ennreal"
   shows  "(P **\<^sub>e Q **\<^sub>e R) = (Q **\<^sub>e P **\<^sub>e R)"
-  using Exp.sep_conj_q_left_commute by auto
+  using Exp.sep_conj_q_left_commute[folded  sep_conj_e_def sep_empty\<^sub>e_def] by auto
 
 lemmas sep_conj_e_c = sep_conj_e_comm sep_conj_e_left_commute
 
@@ -205,13 +205,15 @@ lemma sep_conj_e_mono:
   fixes X X' :: "'a::{sep_algebra} \<Rightarrow> ennreal"
   shows 
    "X \<le> X' \<Longrightarrow> Y \<le> Y' \<Longrightarrow> (X **\<^sub>e Y) \<le> (X' **\<^sub>e Y')" 
-  using Exp.sep_conj_q_mono by auto 
+  using Exp.sep_conj_q_mono[folded  sep_conj_e_def]
+  unfolding le_fun_def by blast
 
 
 lemma sep_impl_e_mono: 
   fixes P' P Y' Y :: "'a::{sep_algebra} \<Rightarrow> ennreal"
   shows "P' \<le> P \<Longrightarrow> Y \<le> Y' \<Longrightarrow> (P -*\<^sub>e Y) \<le> (P' -*\<^sub>e Y')"  
-  using Exp.sep_impl_q_mono by auto 
+  using Exp.sep_impl_q_mono[folded  sep_impl_e_def sep_empty\<^sub>e_def]
+  unfolding le_fun_def by blast
 
 subsubsection \<open>adjointness of @{term "(**\<^sub>e)"} and  @{term "(-*\<^sub>e)"}\<close>
 
@@ -219,13 +221,15 @@ subsubsection \<open>adjointness of @{term "(**\<^sub>e)"} and  @{term "(-*\<^su
 lemma sep_conj_sep_impl_e_adjoint:
   fixes X Y Z :: "'a::{sep_algebra} \<Rightarrow> ennreal"
   shows "(X **\<^sub>e Y) \<le> Z \<longleftrightarrow> X \<le> (Y -*\<^sub>e Z)"
-  using Exp.adjoint_general by auto 
+  using Exp.adjoint_general[folded  sep_conj_e_def sep_impl_e_def]
+  unfolding le_fun_def by blast
 
 subsubsection \<open>quantitative modus ponens\<close>
 
 lemma quant_modus_ponens_general:
   shows "( P **\<^sub>e (P -*\<^sub>e X)) \<le> X" 
-  using Exp.quant_modus_ponens_general by auto 
+  using Exp.quant_modus_ponens_general[folded  sep_conj_e_def sep_impl_e_def]
+  unfolding le_fun_def by blast
 
 subsubsection \<open>Theorem 3.6\<close>
 
@@ -238,11 +242,13 @@ lemma theorem_3_6:
   shows 
   "(P **\<^sub>e (sup Q R)) = sup (P **\<^sub>e Q) (P **\<^sub>e R)"
   "( (emb\<^sub>e \<phi>) **\<^sub>e (Q * R)) \<le> ((emb\<^sub>e \<phi>) **\<^sub>e Q) * ((emb\<^sub>e \<phi>) **\<^sub>e R)" 
-  subgoal using Exp.theorem_3_6(1)  by auto 
+  subgoal using Exp.theorem_3_6(1)[folded  sep_conj_e_def sep_impl_e_def]
+    unfolding  sup_fun_def by blast  
   subgoal 
     apply(subst (1) times_fun')
-    using Exp.theorem_3_6(2)
-    by (auto simp: le_fun_def)
+    apply(subst (1) times_fun')
+    using Exp.theorem_3_6(2)[folded  sep_conj_e_def emb\<^sub>e_def]
+    unfolding le_fun_def  sup_fun_def by blast 
   done
 
 subsubsection \<open>Intuitionistic Expectations\<close>
@@ -252,7 +258,7 @@ abbreviation sep_true_q ("1\<^sub>e")  where "1\<^sub>e \<equiv> (emb\<^sub>e se
 
 lemma intuitionistic_e_emb_intuitionistic_iff: 
   "intuitionistic\<^sub>e (emb\<^sub>e P) \<longleftrightarrow> intuitionistic P"
-  using Exp.intuitionistic_q_emb_intuitionistic_iff by auto 
+  using Exp.intuitionistic_q_emb_intuitionistic_iff[folded emb\<^sub>e_def] by auto 
 
 theorem tightest_intuitionistic_expectations_star:
   fixes X :: "'a::{sep_algebra} \<Rightarrow> ennreal"
@@ -260,7 +266,8 @@ theorem tightest_intuitionistic_expectations_star:
     "intuitionistic\<^sub>e (X **\<^sub>e 1\<^sub>e)"
     "X \<le> (X **\<^sub>e 1\<^sub>e)"
     "\<And>X'. intuitionistic\<^sub>e X' \<Longrightarrow> X \<le> X' \<Longrightarrow> (X **\<^sub>e 1\<^sub>e) \<le> X'"
-  using Exp.tightest_intuitionistic_expectations_star by auto
+  using Exp.tightest_intuitionistic_expectations_star[folded emb\<^sub>e_def sep_conj_e_def]
+    unfolding le_fun_def by(blast)+
 
 lemma tightest_intuitionistic_expectations_wand:
   fixes X :: "'a::{sep_algebra} \<Rightarrow> ennreal"
@@ -268,7 +275,8 @@ lemma tightest_intuitionistic_expectations_wand:
     "intuitionistic\<^sub>e (1\<^sub>e -*\<^sub>e X)" 
     "(1\<^sub>e -*\<^sub>e X) \<le> X"
     "\<And>X'. intuitionistic\<^sub>e X' \<Longrightarrow> X' \<le> X \<Longrightarrow>  X' \<le> (1\<^sub>e -*\<^sub>e X)"
-  using Exp.tightest_intuitionistic_expectations_wand by auto
+  using Exp.tightest_intuitionistic_expectations_wand[folded emb\<^sub>e_def sep_impl_e_def]
+    unfolding le_fun_def by blast+
 
 
 
@@ -276,30 +284,30 @@ lemma tightest_intuitionistic_expectations_wand:
 subsubsection \<open>Star and Magic Wand with State\<close>
 
 
-abbreviation sep_conj_es (infixr "\<star>\<^sub>e" 35) where "sep_conj_es == Exp.sep_conj_s_q"
-abbreviation sep_impl_es (infixr "-\<star>\<^sub>e" 35) where "sep_impl_es == Exp.sep_impl_s_q"
-abbreviation "sep_empty_s\<^sub>e \<equiv> Exp.sep_empty_s_q" 
+definition sep_conj_es (infixr "\<star>\<^sub>e" 35) where "sep_conj_es == Exp.sep_conj_s_q"
+definition sep_impl_es (infixr "-\<star>\<^sub>e" 35) where "sep_impl_es == Exp.sep_impl_s_q"
+definition "sep_empty_s\<^sub>e \<equiv> Exp.sep_empty_s_q" 
 
-lemma sep_conj_es_def:
+lemma sep_conj_es_alt:
   fixes P :: "(_ \<times> 'a::{sep_algebra} \<Rightarrow> ennreal)"
   shows "(P \<star>\<^sub>e Q) = (\<lambda>(s,h). Sup { P(s,x) * Q(s,y) | x y. h=x+y \<and> x ## y})"
-  by (simp add: Exp.sep_conj_s_q_def Exp.sep_conj_q_def)
+  by (simp add: Exp.sep_conj_s_q_def Exp.sep_conj_q_def sep_conj_es_def)
 
-lemma sep_impl_es_def:
+lemma sep_impl_es_alt:
   "(P -\<star>\<^sub>e Q) = (\<lambda>(s,h). INF h': { h'. h ## h' \<and> (bot < P(s,h') \<or> bot < Q(s,h+h') )
                                 \<and> ( P(s,h') < top \<or> Q(s,h+h') < top)}. 
                                     (Q (s,h + h')) / P (s,h') )"
-  by (simp add: Exp.sep_impl_qq_def Exp.sep_impl_s_q_def )
+  by (simp add: Exp.sep_impl_qq_def Exp.sep_impl_s_q_def sep_impl_es_def)
 
-lemma sep_empty_s\<^sub>e_def: "sep_empty_s\<^sub>e = (\<lambda>(s, y). emb\<^sub>e (\<lambda>h. h = 0) y)"
-  by (auto simp: Exp.sep_empty_s_q_def Exp.sep_empty_q_def  )
+lemma sep_empty_s\<^sub>e_alt: "sep_empty_s\<^sub>e = (\<lambda>(s, y). emb\<^sub>e (\<lambda>h. h = 0) y)"
+  by (auto simp: Exp.sep_empty_s_q_def emb\<^sub>e_def Exp.sep_empty_q_def sep_empty_s\<^sub>e_def )
 
-lemmas sep_conj_es_commute =  Exp.sep_conj_s_q_commute
-lemmas sep_conj_es_neutral = Exp.sep_conj_s_q_neutral
-lemmas sep_conj_es_assoc = Exp.sep_conj_s_q_assoc
-lemmas sep_conj_es_left_commute_s = Exp.sep_conj_q_left_commute_s
+lemmas sep_conj_es_commute =  Exp.sep_conj_s_q_commute[folded sep_conj_es_def]
+lemmas sep_conj_es_neutral = Exp.sep_conj_s_q_neutral[folded sep_conj_es_def sep_empty_s\<^sub>e_def]
+lemmas sep_conj_es_assoc = Exp.sep_conj_s_q_assoc[folded sep_conj_es_def]
+lemmas sep_conj_es_left_commute_s = Exp.sep_conj_q_left_commute_s[folded sep_conj_es_def]
 
-lemmas sep_conj_es_c = Exp.sep_conj_q_s_c
+lemmas sep_conj_es_c = Exp.sep_conj_q_s_c[folded sep_conj_es_def]
 
 
 lemma theorem_3_6_s:
@@ -308,39 +316,43 @@ lemma theorem_3_6_s:
   "(P \<star>\<^sub>e sup Q R) = (\<lambda>s. sup ((P \<star>\<^sub>e Q) s) ((P \<star>\<^sub>e R) s))"
   (*  "(P \<star> (\<lambda>s. Q s + R s)) \<le> (\<lambda>s. (P \<star> Q) s + (P \<star> R) s)" *)
   "( (emb\<^sub>e \<phi>) \<star>\<^sub>e (Q * R)) \<le> ((emb\<^sub>e \<phi>) \<star>\<^sub>e Q) * ((emb\<^sub>e \<phi>) \<star>\<^sub>e R)"
-  subgoal using Exp.theorem_3_6_s(1) .
+  subgoal using Exp.theorem_3_6_s(1)[folded sep_conj_es_def]
+    unfolding sup_fun_def .
   subgoal
     apply(subst (1) times_fun')    
-    using Exp.theorem_3_6_s(2)
+    using Exp.theorem_3_6_s(2)[folded sep_conj_es_def emb\<^sub>e_def]
     by (auto simp: le_fun_def)
   done
 
-lemmas sep_conj_es_mono = Exp.sep_impl_s_q_mono
-lemmas sep_impl_es_mono = Exp.sep_conj_s_q_mono'
+lemmas sep_conj_es_mono = Exp.sep_impl_s_q_mono [folded sep_impl_es_def emb\<^sub>e_def]
 
 lemma adjoint_general_s:
   shows "(X \<star>\<^sub>e P) \<le> Y \<longleftrightarrow> X \<le> (P -\<star>\<^sub>e Y)" 
-  using Exp.adjoint_general_s by auto
+  using Exp.adjoint_general_s [folded sep_impl_es_def sep_conj_es_def]
+    unfolding le_fun_def by blast
 
 
 lemma quant_modus_ponens_general_s:
   shows "( P \<star>\<^sub>e (P -\<star>\<^sub>e X)) \<le> X"
-  using Exp.quant_modus_ponens_general_s by auto
+  using Exp.quant_modus_ponens_general_s [folded sep_impl_es_def sep_conj_es_def]
+    unfolding le_fun_def by blast
 
 
-abbreviation "pure\<^sub>e \<equiv> Exp.pure_q"
+definition "pure\<^sub>e \<equiv> Exp.pure_q"
 
-lemma pure\<^sub>e_def: "pure\<^sub>e X \<longleftrightarrow> (\<forall>s h1 h2. X (s,h1) = X (s,h2))"
-  using Exp.pure_q_def .
+lemma pure\<^sub>e_alt: "pure\<^sub>e X \<longleftrightarrow> (\<forall>s h1 h2. X (s,h1) = X (s,h2))"
+  using Exp.pure_q_def unfolding pure\<^sub>e_def .
 
 lemma  theorem_3_11_1: "pure\<^sub>e X \<Longrightarrow> X * Y \<le> (X \<star>\<^sub>e Y)"
     apply(subst (1) times_fun')   
-  using Exp.theorem_3_11_1 by auto
+  using Exp.theorem_3_11_1[folded pure\<^sub>e_def sep_conj_es_def]
+    unfolding le_fun_def by auto
 
 lemma theorem_3_11_3:
   "pure\<^sub>e X \<Longrightarrow> ((X * Y) \<star>\<^sub>e Z) = X * (Y \<star>\<^sub>e Z)"
     apply(subst times_fun')+
-  using Exp.theorem_3_11_3 by auto  
+  using Exp.theorem_3_11_3[folded pure\<^sub>e_def sep_conj_es_def]
+    unfolding le_fun_def by auto  
   
  
 
