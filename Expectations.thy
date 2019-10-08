@@ -121,7 +121,7 @@ lemma eq79_ennreal: fixes A B C :: ennreal
     by (metis bot.extremum_strict bot_ennreal ennreal_divide_top 
               ennreal_mult_eq_top_iff mult_eq_0_iff nn nn_bot not_le)  
   done
-                            
+
 interpretation Exp: quant_sep_con Inf Sup inf "(\<le>)" "(<)" sup top bot "(*)" "1::ennreal"  "(/)"   
   apply standard subgoal  
     by (simp add: ennreal_div_one)  

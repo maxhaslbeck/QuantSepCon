@@ -410,8 +410,9 @@ proof -
           apply(intro INF_lower2[where i=h']) apply simp by (simp add: emb_def)
         then show ?case using 1(1) FF by auto
       qed 
-      done
-    subgoal   by (auto simp: emb_def INF_constant) 
+      done term Inf
+    subgoal  
+      by(auto simp add:  emb_def INF_constant cong: INF_cong_simp  ) 
     done
   also have "\<dots> \<longleftrightarrow> (P  \<longrightarrow>* Q) h" unfolding sep_impl_def by auto
   finally show "(P  \<longrightarrow>* Q) h \<longleftrightarrow> inf \<^bold>1 ((P -*q (emb Q)) h) = \<^bold>1" by simp
