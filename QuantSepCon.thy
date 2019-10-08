@@ -14,12 +14,8 @@ begin
 section \<open>Quantitative Separating Connectives\<close>
 
 
-typ "'a::{complete_lattice}"
 
 subsection \<open>The Locale quant_sep_con\<close>
-print_classes
-print_locales
-term "(\<le>)" 
 locale quant_sep_con =  comm_monoid oper neutr
   + complete_lattice Inf Sup inf le less sup bot top
   for   Inf :: "'b set \<Rightarrow> 'b" ("\<Sqinter>_" [900] 900)
@@ -1063,6 +1059,11 @@ lemma "BOOL.sep_impl_qq = sep_impl"
   unfolding sep_impl_def BOOL.sep_impl_qq_def
   by auto
 
+lemma "BOOL.intuitionistic_q = intuitionistic"
+  apply(rule ext)  
+  unfolding intuitionistic_def BOOL.intuitionistic_q_def
+  by auto
+
 lemma "BOOL.sep_impl_qq = BOOL.sep_impl_q"
   unfolding BOOL.sep_impl_qq_def BOOL.emb_def by auto
 
@@ -1099,7 +1100,7 @@ lemma sep_impl_q_alt_general'':
   shows "(P -*q Q) = (\<lambda>h. INFI { h'. h ## h' \<and> P h'} (\<lambda> h'. Q (h + h')))"
   using sep_impl_q_alt_general neutral_is_top by auto
 
-lemma sep_impl_q_alt_general':
+lemma sep_impl_q_alt_general''':
   fixes  Q :: "'a \<Rightarrow> 'b"
  
   shows 

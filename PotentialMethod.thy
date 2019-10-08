@@ -29,8 +29,8 @@ lemma INF_ennreal_const_add':
     using   INF_ennreal_add_const_local2[of f c I ] by (simp add: ac_simps) 
  
 
-interpretation ENNREAL_PLUS: quant_sep_con Sup Inf sup "(\<ge>)" "(>)" inf bot top "(+)" "0::ennreal" "(-)" 
-  unfolding quant_sep_con_def apply safe
+interpretation ENNREAL_PLUS: quant_sep_con_one Sup Inf sup "(\<ge>)" "(>)" inf bot top "(+)" "(-)" "0::ennreal" 
+  unfolding quant_sep_con_def quant_sep_con_one_def apply safe
   subgoal by standard   
   subgoal using dual_complete_lattice .
   subgoal apply standard
@@ -43,8 +43,9 @@ interpretation ENNREAL_PLUS: quant_sep_con Sup Inf sup "(\<ge>)" "(>)" inf bot t
     subgoal apply(subst INF_ennreal_const_add') by simp
     subgoal by (simp add: add_mono)  
     subgoal by (metis add.commute ennreal_minus_le_iff top.not_eq_extremum)  
-    subgoal by simp   
+    subgoal by simp  
     done
+  subgoal apply standard by (auto simp: bot_ennreal)
   done 
 
 definition star_pot_method (infixr "\<star>\<^sub>p" 35) where 
@@ -55,7 +56,7 @@ lemma star_pot_method_alt':
     (\<lambda>P Q a. case a of (s, h) \<Rightarrow> Inf {P (s, x) + Q (s, y) |x y. h = x + y \<and> x ## y})"
   unfolding star_pot_method_def ENNREAL_PLUS.sep_conj_s_q_def ENNREAL_PLUS.sep_conj_q_def  
   by (auto )
- 
+
 
 lemma star_pot_method_alt:
   "(P \<star>\<^sub>p Q) = (\<lambda>(s,h). Inf { P(s,x) + Q(s,y) | x y. h=x+y \<and> x ## y})"
@@ -78,6 +79,9 @@ lemma wand_pot_method_alt:
   unfolding wand_pot_method_alt'    by(force intro: SUP_cong)
 
 
+
+
+
 definition "emb\<^sub>p \<equiv> (ENNREAL_PLUS.emb)" 
 
 lemma emb\<^sub>p_alt:"emb\<^sub>p = (\<lambda>P h. if P h then 0 else top)" 
@@ -87,6 +91,17 @@ lemma emb\<^sub>p_alt2: "emb\<^sub>p = (\<lambda>P sh. (if P sh then 0 else \<in
   unfolding emb\<^sub>p_def ENNREAL_PLUS.emb_def apply transfer 
   unfolding infinity_ennreal_def
   by (auto  )  
+
+lemma grr: "(\<lambda>h. emb\<^sub>p P (s, h)) = emb\<^sub>p (\<lambda>h. P (s, h))" 
+  unfolding emb\<^sub>p_alt by auto
+
+lemma wand_pot_method_emb_alt:
+  "((emb\<^sub>p P) -\<star>\<^sub>p Q) = (\<lambda>(s, h). SUP h':{h'. h ## h' \<and> P (s, h')}. Q (s, h + h'))"
+  unfolding wand_pot_method_def 
+  unfolding ENNREAL_PLUS.sep_impl_s_q_def
+  unfolding grr 
+  unfolding emb\<^sub>p_def 
+  apply(subst ENNREAL_PLUS.sep_impl_q_alt_general'') .. 
 
 definition "sep_empty\<^sub>p \<equiv> ENNREAL_PLUS.sep_empty_s_q"
 
