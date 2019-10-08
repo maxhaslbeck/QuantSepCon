@@ -128,7 +128,8 @@ lemma SUP_times_distrib2_general:
 
 
 lemma SUP_mult_left: "\<And>c f. c \<^bold>* SUPR I (\<lambda>i. f i) = SUPR I (\<lambda>i. c \<^bold>* f i)"
-  apply(subst SUP_mult_left') by simp
+  apply(subst SUP_mult_left')
+  by (simp add: image_image)
 
 
 lemma SUP_mult_right: "SUPR I (\<lambda>i. f i) \<^bold>* c = SUPR I (\<lambda>i. f i \<^bold>* c)"
@@ -637,7 +638,7 @@ lemma emb_or: "emb (X or Y) = (fsup (emb X) (emb Y))"
   unfolding emb_def apply(rule ext) unfolding  sup_fun_def by auto 
 
 
-subsubsection \<open>monotonicity of @{term "( **q)"}\<close>
+subsubsection \<open>monotonicity of @{term "(**q)"}\<close>
 
 text \<open>theorem 3.7\<close>
  

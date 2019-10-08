@@ -58,7 +58,7 @@ lift_definition zero_unitinterval :: unitinterval is 0 by simp
 
 instantiation unitinterval :: times
 begin
-lift_definition times_unitinterval :: "unitinterval \<Rightarrow> unitinterval \<Rightarrow> unitinterval"   is "( * )"
+lift_definition times_unitinterval :: "unitinterval \<Rightarrow> unitinterval \<Rightarrow> unitinterval"   is "(*)"
     apply auto  
   by (metis ereal_mult_left_mono mult.right_neutral order_trans) 
 
@@ -120,7 +120,7 @@ next
 section "Use the unit interval to model probabilities"
 
 
-interpretation PROB: quant_sep_con  Inf Sup inf "(\<le>)" "(<)" sup top bot "( * )"   "one_unitinterval"   "divide_unitinterval"
+interpretation PROB: quant_sep_con  Inf Sup inf "(\<le>)" "(<)" sup top bot "(*)"   "one_unitinterval"   "divide_unitinterval"
   apply (standard; transfer)
   subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def) 
   subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def) 
