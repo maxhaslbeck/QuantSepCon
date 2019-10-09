@@ -30,18 +30,15 @@ lemma INF_ennreal_const_add':
  
 
 interpretation ENNREAL_PLUS: quant_sep_con_one Sup Inf sup "(\<ge>)" "(>)" inf bot top "(+)" "(-)" "0::ennreal" 
-  unfolding quant_sep_con_def quant_sep_con_one_def apply safe
-  subgoal by standard   
+  unfolding quant_sep_con_def quant_sep_con_one_def comm_quantale_def apply safe
   subgoal using dual_complete_lattice .
+  subgoal by standard    
+  subgoal apply standard
+    apply(subst INF_ennreal_const_add') by simp
   subgoal apply standard
     subgoal by auto
-    subgoal using bot_ennreal by auto  
-    subgoal by (simp add: bot_ennreal diff_eq_0_ennreal) 
     subgoal by (simp add: ennreal_minus_mono)  
     subgoal by (simp add: ennreal_mono_minus)  
-    subgoal by auto
-    subgoal apply(subst INF_ennreal_const_add') by simp
-    subgoal by (simp add: add_mono)  
     subgoal by (metis add.commute ennreal_minus_le_iff top.not_eq_extremum)  
     subgoal by simp  
     done

@@ -120,27 +120,21 @@ next
 section "Use the unit interval to model probabilities"
 
 
-interpretation PROB: quant_sep_con  Inf Sup inf "(\<le>)" "(<)" sup top bot "(*)"   "one_unitinterval"   "divide_unitinterval"
+interpretation PROB: quant_sep_con  Inf Sup inf "(\<le>)" "(<)" sup bot top "(*)"   "one_unitinterval"   "divide_unitinterval"
   apply (standard; transfer)
   subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def) 
   subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def) 
-  subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def) 
-  subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def) 
-  subgoal by (metis mult_1 divv_def eq_iff ereal_0_less_1 min.cobounded2
-                    min.commute unitinterval_adjoint zero_less_one_ereal)  
-  subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def)  
-  subgoal  
-    by (metis divide_ereal_def eq_iff ereal_mult_right_mono ereal_zero_le_0_iff min.mono zero_le_divide_ereal)  
-  subgoal  
-    by (metis divide_ereal_def ereal_inverse_antimono ereal_mult_left_mono min.mono order_refl)  
-  subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def) 
+  subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def)
   subgoal for c A apply(simp add: mm)
     apply(cases "A={}") 
     subgoal apply auto by (metis ereal_mult_zero max_bot2 mm)  
     subgoal apply(subst SUP_ereal_mult_left[where f=id, simplified]) by auto
     done   
-  subgoal apply(rule order.trans) apply(rule ereal_mult_left_mono)
-    prefer 3 apply(rule ereal_mult_right_mono) by auto 
+  subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def)    
+  subgoal  
+    by (metis divide_ereal_def eq_iff ereal_mult_right_mono ereal_zero_le_0_iff min.mono zero_le_divide_ereal)  
+  subgoal  
+    by (metis divide_ereal_def ereal_inverse_antimono ereal_mult_left_mono min.mono order_refl)   
   subgoal  
     apply(rule unitinterval_adjoint[unfolded divv_alt]) by auto 
   subgoal by (auto simp: algebra_simps min_absorb1 divide_ereal_def) 

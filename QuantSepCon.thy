@@ -13,134 +13,132 @@ begin
 
 section \<open>Quantitative Separating Connectives\<close>
 
+term "class.complete_lattice"
 
 
 subsection \<open>The Locale quant_sep_con\<close>
-locale quant_sep_con =  comm_monoid oper neutr
-  + complete_lattice Inf Sup inf le less sup bot top
+ 
+locale comm_quantale =  complete_lattice Inf Sup inf le less sup bot top
+  + comm_monoid oper neutr
   for   Inf :: "'b set \<Rightarrow> 'b" ("\<Sqinter>_" [900] 900)
-    and Sup ("\<Squnion>_" [900] 900) and
-      inf and le (infix "\<le>" 50) and  less (infix "<" 50)    and  sup top bot and
-    oper :: "'b  \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>*" 70)
+    and Sup ("\<Squnion>_" [900] 900)
+    and inf
+    and le (infix "\<le>" 50) and  less (infix "<" 50)
+    and sup bot top 
+    and oper :: "'b  \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>*" 70)
+    and neutr :: "'b" ("\<^bold>1") +
+  assumes 
+    Sup_mult_left_distrib: "\<And>c A. c \<^bold>* Sup A = Sup (((\<^bold>*) c) ` A)"
+begin
+
+lemma mult_bot: "\<And>x. x \<^bold>* bot = bot"
+  using Sup_mult_left_distrib[where A="{}"] by simp
+
+lemma Sup_mult_right_distrib: "Sup I \<^bold>* c = Sup ((\<lambda>i. i \<^bold>* c) ` I)" 
+  by (auto simp add: commute Sup_mult_left_distrib) 
+
+lemma oper_left_mono: "(a::'b) \<le> b \<Longrightarrow> c \<^bold>* a \<le> c \<^bold>* b"
+  using Sup_mult_left_distrib[where A="{a,b}" and c=c]
+  by (simp add: sup.absorb_iff2)
+
+lemma oper_right_mono: "\<And>a b c. a \<le> b \<Longrightarrow> a \<^bold>* c \<le> b \<^bold>* c"
+  using oper_left_mono by (auto simp add: commute)
+
+lemma oper_mono: "\<And>a b c d. a \<le> b \<Longrightarrow> c \<le> d \<Longrightarrow> a \<^bold>* c \<le> b \<^bold>* d"
+  apply (erule oper_right_mono [THEN order_trans])
+  by (erule oper_left_mono)
+
+end
+
+
+
+locale quant_sep_con =  comm_quantale Inf Sup inf le less sup bot top  oper neutr
+  for   Inf :: "'b set \<Rightarrow> 'b" ("\<Sqinter>_" [900] 900)
+    and Sup ("\<Squnion>_" [900] 900)
+    and inf
+    and le (infix "\<le>" 50) and  less (infix "<" 50)
+    and sup bot top
+    and oper :: "'b  \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>*" 70)
     and neutr :: "'b" ("\<^bold>1") +
   fixes
     divide :: "'b \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>div" 70)
   assumes 
-      \<comment>\<open>Facts about div\<close>
+    \<comment>\<open>Facts about div\<close>
     divide_neutral: "\<And>x::'b. x \<^bold>div \<^bold>1 = x"   (* maybe \<^bold>\<le> suffices *)
-    and top_divide:  "\<And>x. x < top \<Longrightarrow>  top \<^bold>div x = top" (* superfluous *)
-    and divide_bot: "\<And>x::'b. bot < x  \<Longrightarrow> x \<^bold>div bot = top"   (* superfluous *)
     and divide_right_mono_general: "\<And>a b c. a \<le> b \<Longrightarrow> a \<^bold>div c \<le> b \<^bold>div c" 
-    and divide_right_antimono_general: "\<And>a b c. c \<le> b \<Longrightarrow> a \<^bold>div b \<le> a \<^bold>div c" 
-      \<comment>\<open>Facts about oper\<close>
-     and mult_bot: "\<And>x. x \<^bold>* bot = bot"    (* superfluous *)
-    and SUP_mult_left': "\<And>c A. c \<^bold>* Sup A = Sup (((\<^bold>*) c) ` A)"
-    and oper_mono: "\<And>a b c d. a \<le> b \<Longrightarrow> c \<le> d \<Longrightarrow> a \<^bold>* c \<le> b \<^bold>* d" (* superfluous *)
+    and divide_right_antimono_general: "\<And>a b c. c \<le> b \<Longrightarrow> a \<^bold>div b \<le> a \<^bold>div c"  
     \<comment> \<open>oper and divide are "adjoint" = The essence of equation 79\<close>
     and div_mult_adjoint:
-    "\<And>A B C :: 'b.  \<lbrakk>(bot < C \<or> bot < B ) ; (C < top \<or> B < top) \<rbrakk> \<Longrightarrow>  (A \<le> B \<^bold>div C) \<longleftrightarrow> A \<^bold>* C \<le> B"
+    "\<And>A B C :: 'b.  \<lbrakk>(bot < C \<or> bot < B ) ; (C < top \<or> B < top) \<rbrakk> \<Longrightarrow> (A \<le> B \<^bold>div C) \<longleftrightarrow> A \<^bold>* C \<le> B"
     \<comment> \<open>bot is not neutral\<close>
-    and FF: "bot < \<^bold>1" 
+    and bot_not_neutral: "bot < \<^bold>1" 
 begin   
-
 
 
 subsection \<open>stuff about complete lattices:\<close>
 
-
 lemma nn: "(\<not> x < (top)) = (x = top)" 
   using top.not_eq_extremum by blast
+
 lemma nn_bot: "(\<not> bot <  x) = (x = bot)" 
   using bot.not_eq_extremum by blast
 
-(* I think this rule is actually stronger than Inf_mono *)
-lemma Inf_mono_my:
-  assumes "\<And>b. b \<in> B \<Longrightarrow> b < top \<Longrightarrow> \<exists>a\<in>A. a \<le> b"
-  shows "Inf A \<le> Inf B"
-proof (rule Inf_greatest)
-  fix b assume bB: "b \<in> B"
-    show "Inf A \<le> b" proof (cases "b<top")
-      case True       
-    with bB assms obtain a where "a \<in> A" and "a \<le> b" by blast
-    from \<open>a \<in> A\<close> have "Inf A \<le> a" by (rule Inf_lower)
- 
-    with \<open>a \<le> b\<close>  show ?thesis  by simp
-    next
-      case False 
-      then have "b=top" 
-        using top.not_eq_extremum by blast  
-      then show ?thesis  by simp
-    qed
-  qed
+lemma botnottop: "bot \<noteq> top"
+  using bot_not_neutral by auto
 
+lemma gt_botI: "\<not> a \<le> bot \<Longrightarrow> bot < a" 
+  using local.bot_less by blast 
+
+lemma lt_topI: "\<not> e \<le> A \<Longrightarrow>  A < top"
+  using local.top.not_eq_extremum local.top_greatest by blast
+
+lemma le_sideconditions:
+  fixes a b c :: 'b
+  shows "((bot < a \<or> bot < b) \<and> (a < top \<or> b < top) \<longrightarrow> a \<le> b) \<longleftrightarrow> (a \<le> b)" 
+  by (auto simp: nn nn_bot mult_bot botnottop intro: gt_botI)  
 
 lemma l_Sup_cong: "\<And>S S'. S=S' \<Longrightarrow> Sup S = Sup S'"
   by simp
-
-(*
-lemma mult_bot: "\<And>x. x \<^bold>* bot = bot"   
-  using SUP_mult_left'  
-  by (metis SUP_empty Sup_empty)  
-
-lemma divide_bot: "\<And>x::'b. x > bot \<Longrightarrow> x \<^bold>div bot = top"   
-  using  mult_bot div_mult_adjoint top_divide 
-  by (metis bot.extremum le_less_trans nn top.extremum_unique) 
-
-    lemma top_divide':  "\<And>x. x < top \<Longrightarrow>  top \<^bold>div x = top"
-      
-      by (meson bot.extremum dual_order.strict_trans2 eq_iff quant_sep_con.div_mult_adjoint quant_sep_con_axioms top_greatest) 
-
-lemma oper_mono: "\<And>a b c d. a \<le> b \<Longrightarrow> c \<le> d \<Longrightarrow> a \<^bold>* c \<le> b \<^bold>* d"
-  using SUP_mult_left' sorry
-*)
-lemma oper_left_mono: "\<And>a b c d :: 'b. a \<le> b   \<Longrightarrow> c \<^bold>* a \<le> c \<^bold>* b"
-  apply(rule oper_mono) by auto 
  
 abbreviation SUPR :: "'c set \<Rightarrow>('c \<Rightarrow> 'b) \<Rightarrow> 'b" 
   where "SUPR A f \<equiv> \<Squnion>(f ` A)" 
+
 abbreviation INFI :: "'c set \<Rightarrow>('c \<Rightarrow> 'b) \<Rightarrow> 'b" 
   where "INFI A f \<equiv> \<Sqinter>(f ` A)" 
-term "SUPR A (\<lambda>(x,y). f x y)"
 
-
-lemma INF_mono_my: "(\<And>m. m \<in> B \<Longrightarrow> g m < top \<Longrightarrow> \<exists>n\<in>A. f n \<le> g m) \<Longrightarrow> (INFI A f) \<le> (INFI B g)"
-  using Inf_mono_my [of "g ` B" "f ` A"] by auto
-
- 
+lemma INF_mono_strong: "(\<And>m. m \<in> B \<Longrightarrow> g m < top \<Longrightarrow> \<exists>n\<in>A. f n \<le> g m) \<Longrightarrow> (INFI A f) \<le> (INFI B g)"
+  using Inf_mono_strong [of "g ` B" "f ` A"] by auto
 
 lemma SUP_UNION: "(SUPR (\<Union>y\<in>A. g y) (\<lambda>x. f x)) = (SUPR A (\<lambda>y. SUPR (g y) (\<lambda>x. f x )))"
-  apply (rule  antisym)
+  apply (rule antisym)
   by  (blast intro: SUP_least SUP_upper2)+
-
 
 lemma SUP_times_distrib2_general:
   fixes g :: "_\<Rightarrow>_\<Rightarrow>'b"
   shows "SUPR A (\<lambda>(x,y). f x y \<^bold>* g x y) \<le> 
             SUPR A (\<lambda>(x,y). f x y) \<^bold>* SUPR A (\<lambda>(x,y). g x y)"  
-  apply(rule SUP_least)
-  apply auto apply(rule oper_mono)
-  by (auto intro: SUP_upper2)
+  by (auto intro!: SUP_least intro: SUP_upper2  oper_mono)
 
+lemma SUP_mult_left_distrib: "\<And>c f. c \<^bold>* SUPR I (\<lambda>i. f i) = SUPR I (\<lambda>i. c \<^bold>* f i)" 
+  by (simp add: image_image Sup_mult_left_distrib)
 
+lemma SUP_mult_right_distrib: "SUPR I (\<lambda>i. f i) \<^bold>* c = SUPR I (\<lambda>i. f i \<^bold>* c)" 
+  by (simp add: image_image Sup_mult_right_distrib)
 
-lemma SUP_mult_left: "\<And>c f. c \<^bold>* SUPR I (\<lambda>i. f i) = SUPR I (\<lambda>i. c \<^bold>* f i)"
-  apply(subst SUP_mult_left')
-  by (simp add: image_image)
+lemma sup_times_distrib: "(a::'b) \<^bold>* sup b c = sup (a\<^bold>*b) (a\<^bold>*c)"  
+  using Sup_mult_left_distrib[where A="{b,c}"] by simp
 
+subsection \<open>Facts derived from @{thm div_mult_adjoint}}:\<close>
 
-lemma SUP_mult_right: "SUPR I (\<lambda>i. f i) \<^bold>* c = SUPR I (\<lambda>i. f i \<^bold>* c)"
-  by (simp add: commute SUP_mult_left) 
+lemma top_divide:  "\<And>x. x < top \<Longrightarrow>  top \<^bold>div x = top"
+  using div_mult_adjoint
+  by (metis local.bot_less local.top_greatest local.top_unique)  
 
+lemma divide_bot: "\<And>x::'b. bot < x \<Longrightarrow> x \<^bold>div bot = top"   
+  using div_mult_adjoint  
+  by (metis bot.extremum mult_bot le_less_trans nn top.extremum_unique) 
+ 
 
-
-lemma sup_times_distrib: "(a::'b) \<^bold>* sup b c = sup (a\<^bold>*b) (a\<^bold>*c)" 
-proof -
-  have f: "\<And>a b :: 'b. sup a b = Sup {a,b}"  
-    by simp   
-  show ?thesis
-    apply(simp only: f)
-    apply(subst SUP_mult_left') by simp
-qed
 
 
 context
@@ -158,18 +156,14 @@ definition
 lemma sep_conj_q_alt :
   "(P **q Q) = (\<lambda>h. SUPR {(x,y). h=x+y \<and> x ## y} (\<lambda>(x,y). P x \<^bold>* Q y))"
   unfolding  sep_conj_q_def
-  apply auto apply(rule ext)
-  apply(rule arg_cong[where f=Sup]) by auto
+  apply(rule ext)  by (auto intro!: l_Sup_cong)  
 
 
 lemma sep_conj_q_SUP:
   "(P **q Q) = (\<lambda>h. (SUPR {(x,y)| x y. h=x+y \<and> x ## y} (\<lambda>i. (\<lambda>(x,y). P x \<^bold>* Q y) i)))"
-  unfolding sep_conj_q_def apply auto  apply (rule ext)
-  apply(rule arg_cong[where f=Sup]) by auto
+  unfolding  sep_conj_q_def
+  apply(rule ext)  by (auto intro!: l_Sup_cong)  
 
-   
-
- 
 
 subsection \<open>Quantitative Separating Implication - Magic Wand\<close>
  
@@ -191,7 +185,7 @@ lemma emb_squared: "emb P x = emb P x \<^bold>* emb P x"
   apply (cases "emb P x = bot") using emb_range apply (auto simp: mult_bot) by fastforce
 
 lemma emb_1: "emb P h = \<^bold>1 \<longleftrightarrow> P h"
-  apply (auto simp: emb_def) using FF by blast  
+  apply (auto simp: emb_def) using bot_not_neutral by blast  
 
 definition sep_empty_q :: "'a \<Rightarrow> 'b"  where
   "sep_empty_q \<equiv> emb (\<lambda>h. h = 0)"
@@ -200,104 +194,113 @@ text \<open>The restricted wand with an predicate in the first component:\<close
 
 abbreviation sep_impl_q (infixr "-*q" 35) where   "(P -*q Q) \<equiv> (emb P -*qq Q)" 
  
+ 
 
 lemma sep_impl_q_alt_general:
   fixes  Q :: "'a \<Rightarrow> 'b" 
   shows 
-  "inf \<^bold>1 ((P -*q Q) h) = inf \<^bold>1 (INFI  { h'. h ## h' \<and> P h'} (\<lambda>h'. Q (h + h')))"
+    "inf \<^bold>1 ((P -*q Q) h) = inf \<^bold>1 (INFI  { h'. h ## h' \<and> P h'} (\<lambda>h'. Q (h + h')))"
 proof -
-  have T: "{h'. h ## h' \<and> ((bot::'b) < emb P h' \<or> (bot::'b) < Q (h + h')) \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}
+  have T: "{h'. h ## h' \<and> ((bot::'b) < emb P h' \<or> (bot::'b) < Q (h + h'))
+                       \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}
       = {h'. h ## h' \<and>  (bot::'b) < emb P h' \<and> (emb P h' < (top::'b) \<or> Q (h + h') < top)}
-       \<union>  {h'. h ## h' \<and>(bot::'b) = emb P h' \<and> (bot::'b) < Q (h + h') \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}" 
+       \<union>  {h'. h ## h' \<and>(bot::'b) = emb P h' \<and> (bot::'b) < Q (h + h')
+                       \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}" 
     using bot.not_eq_extremum by fastforce    
 
-  let ?A = "{h'.  h ## h'   \<and> Q (h + h') < top \<and> P h'}"
+  let ?A = "{h'. h ## h' \<and> Q (h + h') < top \<and> P h'}"
   let ?B = "{h'. h ## h' \<and> (bot::'b) < emb P h' \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}"
-  have AB: "?A \<subseteq> ?B"  by (auto simp: emb_def FF)
+  have AB: "?A \<subseteq> ?B"  by (auto simp: emb_def bot_not_neutral)
+  
 
   have KK: "\<^bold>1 \<le> (INFI (?B-?A) (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))"
-    unfolding le_Inf_iff apply auto
-      apply(auto simp: emb_def divide_neutral split: if_splits)  
-    using local.top.not_eq_extremum local.top_greatest by blast  
+    by(auto simp: le_Inf_iff emb_def divide_neutral intro: lt_topI)   
 
-
-    have 1: "inf \<^bold>1 (INFI ?B (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))
+  have 1: "inf \<^bold>1 (INFI ?B (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))
       = inf \<^bold>1 (INFI ?A (\<lambda>x. Q (h + x)))"
-    proof -
-      have B_decompose: "?B = (?B - ?A) \<union> (?A)"  using AB by blast
-      thm INF_union
-      have i: "(INFI ?A (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) = (INFI ?A (\<lambda>h'.  Q (h + h')))"
-        apply(rule INF_cong) apply simp by (auto simp: emb_def divide_neutral)
+  proof -
+    have B_decompose: "?B = (?B - ?A) \<union> (?A)"  using AB by blast 
+    have i: "(INFI ?A (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) = (INFI ?A (\<lambda>h'.  Q (h + h')))"
+       by (auto simp: emb_def divide_neutral)
 
-      have ii: "inf \<^bold>1 (INFI (?B-?A) (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) = \<^bold>1" 
-        using KK  
-        by (simp add: antisym) 
+    have ii: "inf \<^bold>1 (INFI (?B-?A) (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) = \<^bold>1" 
+      using KK by (auto intro: antisym) 
 
-      have "(INFI (?B) (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))  = inf (INFI (?B - ?A) (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) (INFI (?A) (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))"
-        apply(subst B_decompose) by(rule INF_union)
-      also have "\<dots> = inf (INFI (?B - ?A) (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) (INFI (?A) (\<lambda>h'.  Q (h + h')))"
-        unfolding i by simp
-      finally have iii: "(INFI (?B) (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) = inf (INFI (?B - ?A) (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) (INFI (?A) (\<lambda>h'.  Q (h + h')))" .
+    have "(INFI (?B) (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))
+            = inf (INFI (?B - ?A) (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))
+                   (INFI (?A) (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))"
+      apply(subst B_decompose) by(rule INF_union)
+    also have "\<dots> = inf (INFI (?B - ?A) (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))
+                          (INFI (?A) (\<lambda>h'.  Q (h + h')))"
+      unfolding i by simp
+    finally
+    have iii: "(INFI (?B) (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))
+           = inf (INFI (?B - ?A) (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) (INFI (?A) (\<lambda>h'.  Q (h + h')))" .
 
-      have "inf \<^bold>1 (INFI (?B) (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) 
-              = inf \<^bold>1 (inf (INFI (?B - ?A) (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) (INFI (?A) (\<lambda>h'.  Q (h + h'))))" unfolding iii by simp
-      also have "\<dots> = inf (inf \<^bold>1 (INFI (?B - ?A) (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))) (INFI (?A) (\<lambda>h'.  Q (h + h')))"
-        by(simp add: inf.assoc)
-      also have "\<dots> = inf \<^bold>1 (INFI (?A) (\<lambda>h'.  Q (h + h')))"
-        unfolding ii apply simp done
-      finally show ?thesis .
-    qed 
+    have "inf \<^bold>1 (INFI (?B) (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) 
+              = inf \<^bold>1 (inf (INFI (?B-?A) (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) 
+                            (INFI (?A) (\<lambda>h'.  Q (h + h'))))"
+      unfolding iii by simp
+    also have "\<dots> = inf (inf \<^bold>1 (INFI (?B-?A) (\<lambda>h'. Q (h+h') \<^bold>div emb P h')))
+                        (INFI ?A (\<lambda>h'. Q (h+h')))"
+      by(simp add: inf.assoc)
+    also have "\<dots> = inf \<^bold>1 (INFI (?A) (\<lambda>h'.  Q (h + h')))"
+      unfolding ii by simp
+    finally show ?thesis .
+  qed 
 
 
-  have "(\<exists>h'. h ## h' \<and> (bot::'b) < top \<and> Q (h + h') < top  \<and> P h') \<Longrightarrow> (INFI { h'. h ## h' \<and> P h'} (\<lambda>h'. Q (h + h'))) < top"
+  have "(\<exists>h'. h ## h' \<and> (bot::'b) < top \<and> Q (h + h') < top  \<and> P h')
+             \<Longrightarrow> (INFI { h'. h ## h' \<and> P h'} (\<lambda>h'. Q (h + h'))) < top"
     apply safe subgoal for h' 
       apply(rule order.strict_trans1)
        apply(rule INF_lower[where i=h']) by auto
     done
-  
-  have "~(\<exists>h'. h ## h' \<and> (bot::'b) < top \<and> Q (h + h') < top  \<and> P h') \<Longrightarrow> (INFI { h'. h ## h' \<and> P h'} (\<lambda>h'. Q (h + h'))) = top"
+
+  have "~(\<exists>h'. h ## h' \<and> (bot::'b) < top \<and> Q (h + h') < top  \<and> P h')
+           \<Longrightarrow> (INFI { h'. h ## h' \<and> P h'} (\<lambda>h'. Q (h + h'))) = top"
     apply auto  
     by (metis Inf_UNIV Inf_top_conv(2) UNIV_I top.not_eq_extremum)  
- 
+
   have 2: "(INFI {h'. h ## h' \<and> (bot::'b) = emb P h' \<and> (bot::'b) < Q (h + h') 
                    \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}
                  (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))
       = top" 
-    unfolding emb_def apply auto
-    using divide_bot by simp_all 
-  
+    by (simp_all add: divide_bot) 
 
-  have F: "{ h'. h ## h' \<and> P h'} = { h'. h ## h' \<and> P h' \<and> Q (h + h') = top} \<union> { h'. h ## h' \<and> P h' \<and> Q (h + h') < top}"
+  have F: "{ h'. h ## h' \<and> P h'} = { h'. h ## h' \<and> P h' \<and> Q (h + h') = top}
+                                     \<union> { h'. h ## h' \<and> P h' \<and> Q (h + h') < top}"
     using top.not_eq_extremum by blast
-
 
   have 3: "(INFI {h'. h ## h' \<and> P h' \<and> Q (h + h') = top} (\<lambda>h'. Q (h + h'))) = top"
     by auto
- 
+
   have "inf \<^bold>1 ((P -*q Q) h)
-     = inf \<^bold>1 (inf (INFI {h'. h ## h' \<and> (bot::'b) < emb P h' \<and> (emb P h' < (top::'b)
-                               \<or> Q (h + h') < (top::'b))}
+     = inf \<^bold>1 (inf (INFI {h'. h ## h' \<and> (bot::'b) < emb P h'
+                               \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}
                           (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))
-     (INFI {h'. h ## h' \<and> (bot::'b) = emb P h'\<and> (bot::'b) < Q (h + h') \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))} (\<lambda>h'. Q (h + h') \<^bold>div emb P h')))"
-    unfolding sep_impl_qq_def  
-    unfolding T
-    unfolding INF_union by simp
-  also have "\<dots> =  inf \<^bold>1 (inf (INFI {h'. h ## h' \<and> (bot::'b) < emb P h' \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))} (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))
+                   (INFI {h'. h ## h' \<and> (bot::'b) = emb P h'\<and> (bot::'b) < Q (h + h')
+                               \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}
+                          (\<lambda>h'. Q (h + h') \<^bold>div emb P h')))"
+    unfolding sep_impl_qq_def T INF_union
+    by simp
+  also have "\<dots> =  inf \<^bold>1 (inf (INFI {h'. h ## h' \<and> (bot::'b) < emb P h'
+                               \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}
+                          (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))
      top)"
     unfolding 2 by simp
-  also have "\<dots> = inf \<^bold>1 (INFI {h'. h ## h' \<and> (bot::'b) < emb P h' \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))} (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))"
+  also have "\<dots> = inf \<^bold>1 (INFI {h'. h ## h' \<and> (bot::'b) < emb P h'
+                              \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}
+                           (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))"
     by simp
   also have "\<dots>  = inf \<^bold>1 (INFI {h'.  h ## h'  \<and> Q (h + h') < top \<and> P h'} (\<lambda>x. Q (h + x)))"
     unfolding 1 by simp
   also have "\<dots> = inf \<^bold>1 ( INFI { h'. h ## h' \<and> P h'} (\<lambda>h'. Q (h + h')))"
-      unfolding F 
-    unfolding INF_union unfolding 3 apply simp  
+    unfolding F INF_union 3
     apply(rule arg_cong[where f="\<lambda>x. inf \<^bold>1 x"])
-    apply(rule INF_cong) by auto
+    by (auto intro: INF_cong)
   finally show "inf \<^bold>1 ((P -*q Q) h) =  inf \<^bold>1 (INFI {h'. h ## h' \<and> P h'} (\<lambda>h'. Q (h + h')))" .
 qed
-
-
 
 lemma sep_impl_q_alt_general':
   fixes  Q :: "'a \<Rightarrow> 'b" 
@@ -308,8 +311,7 @@ lemma sep_impl_q_alt_general':
 
 subsubsection \<open>Conservativity of QSL as an assertion language\<close>
 
-
-lemma Sup_zeroone: " P \<subseteq> {bot,\<^bold>1} \<Longrightarrow> Sup P \<in> {bot,\<^bold>1}" 
+lemma Sup_zeroone: "P \<subseteq> {bot,\<^bold>1} \<Longrightarrow> Sup P \<in> {bot,\<^bold>1}" 
 proof -
   assume " P \<subseteq> {bot,\<^bold>1}"
   then consider "P = {}" | "P={bot}" | "P={\<^bold>1}" | "P={bot,\<^bold>1}" by auto
@@ -352,25 +354,17 @@ lemma sep_conj_q_leq1: "((emb P) **q (emb Q)) h \<le> \<^bold>1"
   using sep_conj_q_range[of P Q h] by auto 
 
 lemma emb_not_bot: "bot < emb P h \<longleftrightarrow> emb P h = \<^bold>1"
-  using FF by (auto simp: emb_def) 
+  using bot_not_neutral by (auto simp: emb_def) 
+
 lemma emb_not_bot2: "bot \<noteq> emb P h \<longleftrightarrow> emb P h = \<^bold>1"
     "emb P h \<noteq> bot \<longleftrightarrow> emb P h = \<^bold>1"
-  using FF by (auto simp: emb_def) 
+  using bot_not_neutral by (auto simp: emb_def) 
  
-
-lemma "\<^bold>1 \<^bold>div emb P h' \<noteq> bot \<Longrightarrow> \<^bold>1 < top \<Longrightarrow>  \<^bold>1 \<^bold>div emb P h' = \<^bold>1" 
-  unfolding emb_def apply(cases "P h'")
-  subgoal 
-    by (auto simp: divide_neutral divide_bot FF)
-    subgoal 
-      apply (auto simp: divide_neutral divide_bot FF)
-  oops
-
 lemma sep_impl_q_rangezeroonetop: "((P -*q (emb Q)) h) \<in> {bot,\<^bold>1,top}"  
   unfolding sep_impl_qq_def  
     apply(rule Inf_zeroonetop)  
   subgoal apply (auto simp: emb_not_bot emb_not_bot2 divide_neutral  )
-    apply(auto simp: emb_def divide_neutral divide_bot FF)
+    apply(auto simp: emb_def divide_neutral divide_bot bot_not_neutral)
     done
   done
 
@@ -392,23 +386,24 @@ lemma quant_wand_conservative:
 proof - 
   (* rather ugly proof, DB's fault ;) *)
   fix h 
-  have " ((inf \<^bold>1 ((P -*q (emb Q)) h)) = \<^bold>1) \<longleftrightarrow> ((inf \<^bold>1 ((INFI {h'. h ## h' \<and> P h'} (\<lambda>h'. emb Q (h + h'))))) = \<^bold>1)" 
+  have " ((inf \<^bold>1 ((P -*q (emb Q)) h)) = \<^bold>1)
+         \<longleftrightarrow> ((inf \<^bold>1 ((INFI {h'. h ## h' \<and> P h'} (\<lambda>h'. emb Q (h + h'))))) = \<^bold>1)" 
     unfolding sep_impl_q_alt_general by simp 
   also have "\<dots> \<longleftrightarrow> (\<forall>h'. h ## h' \<and> P h' \<longrightarrow> Q (h + h'))"
     apply(rule iffI)
-    subgoal apply auto
+    subgoal 
       apply(cases "{h'. h ## h' \<and> P h'} = {}")
-      subgoal by simp
-      subgoal for h' apply auto proof (rule ccontr, goal_cases)
-        case (1 x)
-        from 1(2-6) have "inf \<^bold>1 (INFI {h'. h ## h' \<and> P h'} (\<lambda>h'. emb Q (h + h'))) \<le> bot" 
+      subgoal by auto
+      subgoal proof (safe, goal_cases)
+        case (1 h' x)
+        from 1(2-4) have "inf \<^bold>1 (INFI {h'. h ## h' \<and> P h'} (\<lambda>h'. emb Q (h + h'))) \<le> bot" 
           apply(intro le_infI2)
-          apply(intro INF_lower2[where i=h']) apply simp by (simp add: emb_def)
-        then show ?case using 1(1) FF by auto
+          apply(intro INF_lower2[where i=h']) by (auto simp: emb_def)
+        then show ?case using 1(1) bot_not_neutral by auto
       qed 
-      done term Inf
+      done 
     subgoal  
-      by(auto simp add:  emb_def INF_constant cong: INF_cong_simp  ) 
+      by(auto simp add: emb_def INF_constant cong: INF_cong_simp  ) 
     done
   also have "\<dots> \<longleftrightarrow> (P  \<longrightarrow>* Q) h" unfolding sep_impl_def by auto
   finally show "(P  \<longrightarrow>* Q) h \<longleftrightarrow> inf \<^bold>1 ((P -*q (emb Q)) h) = \<^bold>1" by simp
@@ -442,7 +437,7 @@ proof -
         by (auto simp: emb_def split: if_splits simp: mult_bot)  
       then have "Sup {emb P x \<^bold>* emb Q y |x y. h = x + y \<and> x ## y} \<le>  bot"
           by (auto intro: Sup_least)
-      with 1(1) show "False" using FF by simp 
+      with 1(1) show "False" using bot_not_neutral by simp 
     qed 
     done
   also have "\<dots> = (((emb P) **q (emb Q)) h = \<^bold>1)" unfolding sep_conj_q_def by simp
@@ -454,6 +449,28 @@ qed
 subsection \<open>Properties of Quantitative Separating Connectives\<close> 
 
 subsubsection \<open>Commutative monoid\<close>
+
+
+
+lemma SUP_UNION_my: "(SUPR A (\<lambda>y. SUPR (g y) (\<lambda>x. f y x ))) = (SUPR (\<Union>y\<in>A. Pair y ` g y) (\<lambda>xy. f (fst xy) (snd xy)))"
+  apply (rule antisym)
+  subgoal 
+    apply(rule SUP_least) 
+    apply(rule SUP_least) 
+    subgoal for x y 
+      apply(rule SUP_upper2[where i="(x,y)"]) by auto
+    done
+  subgoal 
+    apply(rule SUP_least)
+    apply auto subgoal for x y
+    apply(rule SUP_upper2[where i=x]) apply simp
+      apply(rule SUP_upper2[where i=y]) by auto 
+    done
+  done
+
+
+lemma pp: "(\<And>x. gg (g x) = x) \<Longrightarrow> SUPR S f = SUPR (g ` S) (f o gg)"
+  by (simp add: image_image)
 
 lemma star_assoc:
   fixes x y z :: "'a \<Rightarrow> 'b"
@@ -467,19 +484,20 @@ proof (rule ext)
   also have "\<dots> = (SUPR {(x, y). h = x + y \<and> x ## y} (\<lambda>xa.
                     case xa of (xa, ya) \<Rightarrow> SUPR {(x, y). ya = x + y \<and> x ## y} (\<lambda>i.
                           (case i of (h21, h22) \<Rightarrow> x xa \<^bold>* y h21 \<^bold>* z h22))))"
-    by(simp add: SUP_mult_left prod.case_distrib assoc)  
+    by(simp add: SUP_mult_left_distrib prod.case_distrib assoc)  
   also have "\<dots> = (SUPR {(x, y). h = x + y \<and> x ## y} (\<lambda>xa.
                     SUPR {((fst xa),x, y)| x y . snd xa = x + y \<and> x ## y}
                         (\<lambda>i. (case i of (b, h21, h22) \<Rightarrow> x b \<^bold>* y h21 \<^bold>* z h22))))"
-    apply(rule SUP_cong) apply auto apply(rule arg_cong[where f=Sup]) by force 
+      by(force intro!: arg_cong[where f=Sup]) 
   also have "\<dots> = (SUPR {(h1, h2, h3). h = h1 + h2 + h3 \<and> h1 ## h2 + h3
                                            \<and> h1 ## h2 \<and> h1 ## h3 \<and> h3 ## h2 }
                     (\<lambda>xa. case xa of (h1, h2, h3) \<Rightarrow> x h1 \<^bold>* y h2 \<^bold>* z h3))" 
     apply(subst SUP_UNION[symmetric]) 
     apply(rule SUP_cong)
     subgoal
-      apply (auto simp: sep_add_ac dest: sep_disj_addD) 
-      by (metis sep_add_assoc sep_disj_addD1 sep_disj_addD2)  
+      apply safe
+      subgoal by (metis fstI sep_add_assoc sep_disj_addD1 sep_disj_addD2 sndI)
+      by (auto simp: sep_add_ac dest: sep_disj_addD) 
     subgoal by auto
     done
   also have "\<dots> = (SUPR {(x, y). h = x + y \<and> x ## y}
@@ -487,29 +505,27 @@ proof (rule ext)
                        (\<lambda>i. (case i of (h1, h2, h3) \<Rightarrow> x h1 \<^bold>* y h2 \<^bold>* z h3))))"
     apply(subst SUP_UNION[symmetric]) 
     apply(rule SUP_cong)
-    subgoal
-      apply (auto simp: sep_add_ac dest: sep_disj_addD )
-      subgoal   
-        using  sep_disj_addI1  sep_disj_commuteI by blast   
-      subgoal   
-        using sep_disj_addI3 sep_disj_commuteI by blast   
-      done
+    subgoal 
+      by (auto simp: sep_add_ac dest: sep_disj_addD
+               intro: sep_disj_addI1 sep_disj_addI3 sep_disj_commuteI )   
     subgoal
       by auto
     done
   also have "\<dots> = (SUPR {(h12, h3). h = h12 + h3 \<and> h12 ## h3} (\<lambda>xa.
                     case xa of (h12,h3) \<Rightarrow> SUPR {(x, y). h12 = x+y \<and> x ## y}
                           (\<lambda>h12. (case h12 of (h1, h2) \<Rightarrow> (x h1 \<^bold>* y h2 \<^bold>* z h3)))))"
-    apply(rule SUP_cong) apply simp
+    apply(rule SUP_cong)
+     apply simp
     apply safe
     apply(rule l_Sup_cong) by force
   also have "\<dots> = ((x **q y) **q z) h"
-    unfolding sep_conj_q_SUP apply(auto simp: SUP_mult_right) 
-    apply(rule SUP_cong) apply simp
-    apply safe apply(rule SUP_cong) by (auto simp: mult.assoc) 
+    unfolding sep_conj_q_SUP apply(auto simp: SUP_mult_right_distrib) 
+    apply(rule SUP_cong)
+     apply simp
+    apply safe
+    apply(rule SUP_cong) by (auto simp: mult.assoc) 
   finally show "(x **q (y **q z)) h  = ((x **q y) **q z) h " .
 qed
-
 
 lemma star_comm:
   fixes X Y :: "_ \<Rightarrow> 'b"
@@ -517,28 +533,7 @@ lemma star_comm:
   unfolding sep_conj_q_SUP
   apply(rule ext)
   apply(rule l_Sup_cong)
-  apply auto
-  subgoal
-    apply (auto simp add: commute sep_disj_commute sep_add_commute)
-    done
-  subgoal for a b
-    apply(rule Set.image_eqI[where x="(b,a)"])
-    apply auto
-      apply (simp add:  commute)
-    using sep_add_commute apply auto[1]
-    apply (simp add: sep_disj_commute)
-    done
-  done
-
-lemma star_comm_nice:
-  fixes X Y :: "_ \<Rightarrow> 'b"
-  shows  "(X **q Y) = (Y **q X)"
-  unfolding sep_conj_q_SUP
-  apply(rule ext)
-  apply(rule l_Sup_cong)
-  apply (auto simp add: commute sep_add_ac)
-  done
-
+  by (auto simp add: commute sep_add_ac) 
 
 lemma emp_neutral1:
   "(X **q sep_empty_q) = X"
@@ -553,8 +548,7 @@ lemma emp_neutral1:
 
 lemma emp_neutral2 : 
   "(sep_empty_q **q X) = X"
-  apply(simp only: star_comm)
-  apply(rule emp_neutral1) done
+  by (simp add: star_comm emp_neutral1) 
 
 lemmas emp_neutral = emp_neutral1 emp_neutral2
 
@@ -584,7 +578,7 @@ proof
   have "(P **q (fsup Q R)) h = Sup {P x \<^bold>* fsup Q R y |x y. h = x + y \<and> x ## y}"
     unfolding sep_conj_q_def by simp
   also have "\<dots> = Sup { sup (P x \<^bold>* Q y) (P x \<^bold>* R y) |x y. h = x + y \<and> x ## y}"
-    apply(subst  sup_times_distrib)  by simp
+    apply(subst sup_times_distrib)  by simp
   also have "\<dots> = (SUPR {(x, y). h = x + y \<and> x ## y} (\<lambda>x. case x of (x,y) \<Rightarrow> sup (P x \<^bold>* Q y) (P x \<^bold>* R y)))" 
     apply (rule arg_cong[where f=Sup]) by auto
   also have "\<dots> = (SUPR {(x, y). h = x + y \<and> x ## y} (\<lambda>x. sup (P (fst x) \<^bold>* Q (snd x)) (P (fst x) \<^bold>* R (snd x))))"
@@ -608,7 +602,6 @@ lemma theorem_3_6_general3:
     have "( (emb \<phi>) **q (\<lambda>h. Q h \<^bold>* R h)) h  =  (SUPR {(h1, h2). h = h1 + h2 \<and> h1 ## h2} (\<lambda> (h1, h2). emb \<phi> h1 \<^bold>* (\<lambda>h. Q h \<^bold>* R h) h2))"
       unfolding sep_conj_q_alt by simp
     also have "... = (SUPR {(h1, h2). h = h1 + h2 \<and> h1 ## h2} (\<lambda>(h1, h2). emb \<phi> h1 \<^bold>* Q h2 \<^bold>* R h2))" apply (rule SUP_cong) 
-       apply simp
       by (auto simp: assoc)    
     also have "... =   (SUPR {(h1, h2). h = h1 + h2 \<and> h1 ## h2} (\<lambda>(h1, h2). (emb \<phi> h1 \<^bold>* Q h2) \<^bold>* ( emb \<phi> h1  \<^bold>* R h2)))"
       apply (subst (1) emb_squared)
@@ -616,7 +609,8 @@ lemma theorem_3_6_general3:
     also have "... \<le> (SUPR {(h1, h2). h = h1 + h2 \<and> h1 ## h2} (\<lambda>(h1, h2). (emb \<phi> h1  \<^bold>* Q h2)))
                  \<^bold>* (SUPR {(h1, h2). h = h1 + h2 \<and> h1 ## h2} (\<lambda>(h1, h2).  ( emb \<phi> h1  \<^bold>* R h2)))"
       by (rule SUP_times_distrib2_general)
-    also have "... = ((emb \<phi>) **q Q) h \<^bold>* ((emb \<phi>) **q R) h"  by (simp add: local.sep_conj_q_alt)
+    also have "... = ((emb \<phi>) **q Q) h \<^bold>* ((emb \<phi>) **q R) h"
+      by (simp add: local.sep_conj_q_alt)
     finally show "( (emb \<phi>) **q (\<lambda>h. Q h \<^bold>* R h)) h \<le> ((emb \<phi>) **q Q) h \<^bold>* ((emb \<phi>) **q R) h".
   qed
  
@@ -630,9 +624,8 @@ lemma theorem_3_6:
 
 subsubsection \<open>Or\<close> 
 
-
 lemma emb_or: "emb (X or Y) = (fsup (emb X) (emb Y))" 
-  unfolding emb_def apply(rule ext) unfolding  sup_fun_def by auto 
+  unfolding emb_def by auto 
 
 
 subsubsection \<open>monotonicity of @{term "(**q)"}\<close>
@@ -641,80 +634,43 @@ text \<open>theorem 3.7\<close>
  
 
 lemma sep_conj_q_mono:
-  fixes X X' Y Y' :: "_ \<Rightarrow> 'b"
-  shows 
-   "(\<And>x. X x \<le> X' x) \<Longrightarrow> (\<And>y. Y y \<le> Y' y) \<Longrightarrow> (X **q Y) h \<le> (X' **q Y') h"  
-  apply (auto intro: le_funI SUP_mono simp add: sep_conj_q_alt le_funD)  
-  apply(rule SUP_mono) apply auto
-  subgoal for h1 h2
-  apply(rule exI[where x=h1])
-    apply(rule exI[where x=h2]) apply safe
-    apply(rule oper_mono) by (auto simp: le_funD)
-  done
-
-lemma sep_conj_q_mono_nice:
   fixes X X' :: "_ \<Rightarrow> 'b"
   shows 
    "(\<And>x. X x \<le> X' x) \<Longrightarrow> (\<And>y. Y y  \<le> Y' y) \<Longrightarrow> (X **q Y) h \<le> (X' **q Y') h"  
   by (force intro: le_funI SUP_mono simp add: sep_conj_q_alt oper_mono le_funD)  
-
-
-
-lemma sep_conj_q_impl1:
+ 
+lemma sep_conj_q_right_mono:
   fixes P :: "_ \<Rightarrow> 'b"
   assumes P: "\<And>h. P h \<le> I h"
   shows "(P **q R) h \<le> (I **q R) h" 
-  using sep_conj_q_mono_nice 
-  by (metis assms dual_order.refl le_funD le_fun_def) 
+  using sep_conj_q_mono assms by blast
 
-
-
-lemma sep_conj_q_impl_ennreal :
-  fixes P Q :: "_ \<Rightarrow> 'b"
-  assumes P: "\<And>h. P h \<le> P' h"
-  assumes Q: "\<And>h. Q h \<le> Q' h"
-  shows "(P **q Q) h \<le> (P' **q Q') h"
-  using   P Q 
-  by (auto intro: le_funI intro!: sep_conj_q_mono_nice )  
-
+lemma sep_conj_q_left_mono:
+  fixes P :: "_ \<Rightarrow> 'b"
+  assumes P: "\<And>h. P h \<le> I h"
+  shows "(P **q R) h \<le> (I **q R) h" 
+  using sep_conj_q_mono assms by blast
 
 subsubsection \<open>monotonicity of @{term "(-*qq)"}\<close>
 
 
-lemma sep_impl_q_monoR: 
+lemma sep_impl_q_left_mono: 
   fixes P :: "_\<Rightarrow>'b"
   shows "(\<And>y. Y y \<le> Y' y) \<Longrightarrow> (P -*qq Y) h \<le> (P -*qq Y') h"  
   unfolding sep_impl_qq_def 
-  apply(rule Inf_mono_my) 
-  apply auto
-  subgoal for   h' apply(rule exI[where x=h']) 
-    apply auto  
-    by (simp add: divide_right_mono_general  )
-  subgoal for   h' apply(rule exI[where x=h']) 
-    apply auto  
-     apply (auto simp add: nn divide_right_mono_general  )         
-    by (metis le_funD less_le_not_le) 
-  subgoal for   h' apply(rule exI[where x=h'])  
-    apply (auto simp add: nn divide_right_mono_general  )
-      apply(auto simp: nn_bot )  
-    using divide_bot local.nn quant_sep_con.nn_bot quant_sep_con_axioms by fastforce
- 
-   
-  subgoal for   h' apply(rule exI[where x=h']) 
-    apply auto 
-      apply (auto simp add: nn divide_right_mono_general le_funD nn_bot)
-    subgoal  
-      using divide_bot local.bot_less by fastforce 
-    subgoal 
-      by (simp add: local.less_le_not_le) 
-  done     
+  apply(rule INF_mono_strong) 
+  subgoal for h'
+    apply(rule bexI[where x=h'])
+    subgoal by (auto intro!: divide_right_mono_general)
+    subgoal using local.less_le_not_le local.top.not_eq_extremum divide_bot local.bot_less
+      by (force intro!: divide_right_mono_general) 
+    done
   done
 
-
-lemma sep_impl_q_monoR': 
+lemma sep_impl_q_left_mono': 
   fixes P :: "_\<Rightarrow>'b"
   shows "(\<And>y. Y y \<le> Y' y) \<Longrightarrow> (P -*qq Y) h \<le> (P -*qq Y') h"  
-  using sep_impl_q_monoR by blast
+  using sep_impl_q_left_mono by blast
   
 lemma ennreal_inverse_antimono:
   "(a::ennreal) \<le> b \<Longrightarrow> inverse b \<le> inverse a"
@@ -723,72 +679,52 @@ lemma ennreal_inverse_antimono:
    apply(simp add: inverse_ennreal)     
   using ennreal_neq_top top.extremum_uniqueI  
   by (simp add: le_ennreal_iff)  
-  
 
 
 
-lemma sep_impl_q_antimonoL: 
+lemma sep_impl_q_right_antimono: 
   shows "(\<And>h. P' h \<le> P h) \<Longrightarrow> (P -*qq Y) h \<le> (P' -*qq Y) h"  
-  unfolding sep_impl_qq_def 
-
-  apply(rule INF_mono_my)   
-
+  unfolding sep_impl_qq_def
+  apply(rule INF_mono_strong)
   subgoal for   h'  
-    apply(rule bexI[where x=h'])  apply simp
-    subgoal     apply auto
-      subgoal apply(rule divide_right_antimono_general) by simp
-      subgoal apply(rule divide_right_antimono_general)  by simp
-      subgoal apply(rule divide_right_antimono_general)  by simp
-      subgoal apply(rule divide_right_antimono_general)  by simp
-      done
-    by      (auto simp: nn top_divide local.less_le_trans ) 
+    apply(rule bexI[where x=h'])
+    by (auto intro!: divide_right_antimono_general  simp: nn top_divide local.less_le_trans ) 
   done
 
 
 lemma sep_impl_q_mono: 
   shows "(\<And>x. P' x \<le> P x) \<Longrightarrow> (\<And>x. Y x \<le> Y' x) \<Longrightarrow> (P -*qq Y) h  \<le> (P' -*qq Y') h"  
   apply(rule order.trans)
-  apply(rule sep_impl_q_monoR[where Y'=Y']) apply simp  
-  apply(rule sep_impl_q_antimonoL) by simp  
+  apply(rule sep_impl_q_left_mono[where Y'=Y']) apply simp  
+  apply(rule sep_impl_q_right_antimono) by simp  
    
 
 subsubsection \<open>adjointness of star and magicwand\<close>
 
 text \<open>theorem 3.9\<close>
- 
+
 lemma adjoint_general:
   shows "(\<forall>h. (X **q P) h \<le> Y h) \<longleftrightarrow> (\<forall>h. X h \<le> (P -*qq Y) h)"
 proof -    
+  (* side condition *)
+  let ?sc = "\<lambda>a b. (bot < a \<or> bot < b ) \<and> (a < top \<or> b < top)"
+
+  have le_mult_sc: "\<And>a b c. (?sc a b \<longrightarrow> c \<^bold>* a \<le> b) \<longleftrightarrow> (c \<^bold>* a \<le> b)" 
+    by (auto simp: nn nn_bot mult_bot botnottop intro: gt_botI)  
+
   have "(\<forall> h. X h \<le> (P -*qq Y) h)
-       \<longleftrightarrow> (\<forall>h. X h \<le> (INFI {h'. h ## h' \<and> (bot < P h' \<or> bot < Y (h+h') ) \<and> (P h' < top \<or> Y (h+h') < top) }
-                      (\<lambda>h'. Y (h + h') \<^bold>div P h')))" 
-    unfolding sep_impl_qq_def
-    by simp  
-  also have "... \<longleftrightarrow> (\<forall>h h'. h ## h' \<and> (bot < P h' \<or> bot < Y (h+h') ) \<and> (P h' < top \<or> Y (h+h') < top)  \<longrightarrow> X h \<le> Y (h + h') \<^bold>div P h')" 
-    by (simp add: le_INF_iff)
-  also have "... \<longleftrightarrow>  (\<forall>h h'. h ## h' \<and> (bot < P h' \<or> bot < Y (h+h') ) \<and> (P h' < top \<or> Y (h+h') < top)  \<longrightarrow> X h \<^bold>* P h' \<le> Y (h + h'))"
+       \<longleftrightarrow> (\<forall>h. X h \<le> (INFI {h'. h ## h' \<and> ?sc (P h') (Y (h+h')) } (\<lambda>h'. Y (h + h') \<^bold>div P h')))" 
+    unfolding sep_impl_qq_def by simp  
+  also have "... \<longleftrightarrow> (\<forall>h h'. h ## h' \<longrightarrow> ?sc (P h') (Y (h+h')) \<longrightarrow> X h \<le> Y (h + h') \<^bold>div P h')" 
+    by (auto simp: le_INF_iff)
+  also have "... \<longleftrightarrow>  (\<forall>h h'. h ## h' \<longrightarrow> ?sc (P h') (Y (h+h')) \<longrightarrow> X h \<^bold>* P h' \<le> Y (h + h'))"
     using div_mult_adjoint by auto 
   also have "... \<longleftrightarrow> (\<forall>a b. a ## b \<longrightarrow> X a \<^bold>* P b \<le> Y (a + b))" 
-    apply auto
-    subgoal for a b
-      apply (cases "bot < P b")
-      subgoal
-        apply( cases "P b < top"; cases "Y (a+b) < top")
-        by (auto simp: nn) 
-      subgoal
-        apply( cases "P b < top"; cases "Y (a+b) < top")
-           apply (auto simp: nn nn_bot mult_bot) 
-        subgoal  
-          by (metis bot.extremum_strict)   
-        done
-      done
-    done
+    by(auto simp: le_mult_sc)
   also have "... \<longleftrightarrow> (\<forall>h. ((\<lambda>h. SUPR {(x, y). h = x + y \<and> x ## y} (\<lambda> (x, y). X x \<^bold>* P y)) h \<le> Y h))" 
-    thm SUP_le_iff
-    by (simp add:   SUP_le_iff)
+    by (simp add: SUP_le_iff)
   also have "... \<longleftrightarrow> (\<forall>h. (X **q P) h \<le> Y h)"
-    unfolding sep_conj_q_alt
-    by simp
+    unfolding sep_conj_q_alt  by simp
   finally show ?thesis by simp
 qed
   
@@ -823,7 +759,6 @@ text \<open>In SL, a predicate @{term \<phi>} is called @{term intuitionistic}, 
  @{term h'} with @{term "h \<preceq> h'"} , @{term "\<phi> h"} implies @{term "\<phi> h'"}.\<close>
 
 term "intuitionistic"
-
 term "sep_true"
 
 definition intuitionistic_q :: "('a \<Rightarrow> 'b) \<Rightarrow> bool" where
@@ -832,8 +767,7 @@ definition intuitionistic_q :: "('a \<Rightarrow> 'b) \<Rightarrow> bool" where
 lemma intuitionistic_q_emb_intuitionistic_iff: 
   "intuitionistic_q (emb P) \<longleftrightarrow> intuitionistic P"
   unfolding intuitionistic_q_def intuitionistic_def emb_def
-  using FF less_le_not_le by fastforce  
-   
+  using bot_not_neutral less_le_not_le by fastforce     
 
 lemma intuitionistic_qI:
   "(\<And>h h'. h \<preceq> h' \<Longrightarrow> P h \<le> P h') \<Longrightarrow> intuitionistic_q P"
@@ -842,14 +776,11 @@ lemma intuitionistic_qI:
 lemma intuitionistic_qI2:
   "(\<And>h h'. h ## h' \<Longrightarrow> P h \<le> P (h + h')) \<Longrightarrow> intuitionistic_q P"
   apply (unfold intuitionistic_q_def sep_substate_def)
-  by auto
-
- 
+  by auto 
 
 lemma intuitionistic_qD:
   "intuitionistic_q X \<Longrightarrow>  h ## z \<Longrightarrow> h' = h + z \<Longrightarrow> X h \<le> X h' "
   by (unfold intuitionistic_q_def sep_substate_def, auto)
-
 
 lemma intuitionistic_q_is_attained_at_h: 
   fixes
@@ -860,9 +791,9 @@ lemma intuitionistic_q_is_attained_at_h:
   subgoal 
     apply(rule SUP_least) using assms by(auto dest: intuitionistic_qD)
   subgoal 
-      apply(rule SUP_upper2[where i="(h,0)"]) by auto
+    apply(rule SUP_upper2[where i="(h,0)"]) by auto
   done
- 
+
 text \<open>Tightest intuitionistic expectations\<close>
 
 abbreviation sep_true_q ("1\<^sub>q")  where "1\<^sub>q \<equiv> (emb sep_true)"
@@ -877,25 +808,24 @@ proof -
   show "intuitionistic_q (X **q 1\<^sub>q)" 
   proof (rule intuitionistic_qI2)
     fix h h' :: 'a
-    assume a: "h ## h'" 
+    assume *: "h ## h'" 
     have "(X **q 1\<^sub>q) h = (SUPR {(x, y). h = x + y \<and> x ## y} (\<lambda>(h1, h2). X h1 \<^bold>* 1\<^sub>q h2))" 
       unfolding sep_conj_q_alt by simp
     also have "\<dots> = (SUPR {(x, y). h = x + y \<and> x ## y} (\<lambda>(h1, h2). X h1 \<^bold>* 1\<^sub>q (h2+h')))"
       by (auto simp: emb_def)
     also have "\<dots> \<le> (SUPR {(x, y). h + h' = x + y \<and> x ## y} (\<lambda>(h1, h2). X h1 \<^bold>* 1\<^sub>q h2))"
-      apply(rule SUP_mono) apply auto
-      subgoal for h1 h2 apply(rule exI[where x=h1]) apply(rule exI[where x="h2 + h'"])  
-        using a by (force simp: sep_add_assoc dest: sep_add_disjD intro: sep_disj_addI3) 
+      apply(rule SUP_mono) apply safe
+      subgoal for h1 h2 apply(rule bexI[where x="(h1,h2 + h')"])  
+        using * by (auto simp: sep_add_assoc dest: sep_add_disjD intro: sep_disj_addI3)
       done
-  also have "\<dots> = (X **q 1\<^sub>q) (h + h')" 
+    also have "\<dots> = (X **q 1\<^sub>q) (h + h')" 
       unfolding sep_conj_q_alt by simp
     finally show "(X **q 1\<^sub>q) h \<le> (X **q 1\<^sub>q) (h + h')" .
   qed
 next
   fix h 
   have "X h \<le> (SUPR {(x, y) |x y. h = x + y \<and> x ## y} (\<lambda> (x, y). X x \<^bold>* emb (\<lambda>s. True) y))"
-    apply(rule Sup_upper) apply auto 
-    apply(rule Set.image_eqI[where x="(h,0)"]) by (auto simp: emb_def)   
+    by (rule Sup_upper) (auto intro!: image_eqI[where x="(h,0)"] simp: emb_def)   
   also have "\<dots> = (X **q 1\<^sub>q) h"
     unfolding sep_conj_q_SUP by simp
   finally show "X h \<le> (X **q 1\<^sub>q) h" . 
@@ -914,8 +844,6 @@ next
     finally show "(X **q 1\<^sub>q) h \<le> X' h" . 
 qed
 
-
-
 lemma intuitionistic_q_is_attained_at_h_wand: 
   fixes
     X :: "_ \<Rightarrow> 'b"
@@ -931,7 +859,6 @@ lemma intuitionistic_q_is_attained_at_h_wand:
     done
   done
 
-
 lemma tightest_intuitionistic_expectations_wand_general:
   fixes X :: "'a \<Rightarrow> 'b"
   shows
@@ -939,34 +866,35 @@ lemma tightest_intuitionistic_expectations_wand_general:
     "\<And>h. (1\<^sub>q -*qq X) h \<le> X h"
     "\<And>X' h. intuitionistic_q X' \<Longrightarrow> (\<And>h. X' h \<le> X h) \<Longrightarrow>  X' h \<le> (1\<^sub>q -*qq X) h"
 proof -
-  {  
+  (* side condition *)
+  let ?sc = "\<lambda>a b. (bot < a \<or> bot < b ) \<and> (a < top \<or> b < top)"
+  show 1: "intuitionistic_q (1\<^sub>q -*qq X)"
+  proof (rule intuitionistic_qI2)
     fix h h' :: 'a
-    assume a: "h ## h'"
-    have "(1\<^sub>q -*qq X) h = (INFI {h'. h ## h' \<and> (bot < emb (\<lambda>s. True) h' \<or> bot < X (h + h')) \<and> (emb (\<lambda>s. True) h' < top \<or> X (h + h') < top)}
-        (\<lambda>h'. X (h + h') \<^bold>div emb (\<lambda>s. True) h'))" 
+    assume *: "h ## h'"
+    have "(1\<^sub>q -*qq X) h = (INFI {h'. h ## h' \<and> ?sc (emb (\<lambda>s. True) h') (X (h + h')) }
+                                (\<lambda>h'. X (h + h') \<^bold>div emb (\<lambda>s. True) h'))" 
       unfolding sep_impl_qq_def  by simp
-    also have "\<dots> \<le> (INFI {h'a. h + h' ## h'a \<and> (bot < emb (\<lambda>s. True) h'a \<or> bot < X (h + h'+ h'a)) \<and> (emb (\<lambda>s. True) h'a < top \<or> X (h + h' + h'a) < top)}
-        (\<lambda>h'a. X (h + h' + h'a) \<^bold>div emb (\<lambda>s. True) h'a))" 
+    also have "\<dots> \<le> (INFI {h'a. h + h' ## h'a \<and> ?sc (emb (\<lambda>s. True) h'a) (X (h + h'+ h'a))}
+                          (\<lambda>h'a. X (h + h' + h'a) \<^bold>div emb (\<lambda>s. True) h'a))" 
       apply(rule INF_mono)
       subgoal for h'' apply(rule bexI[where x="h' + h''"])
-        using a FF by (auto simp: sep_disj_addI3 emb_def sep_add_assoc dest: sep_add_disjD)
+        using * bot_not_neutral
+        by (auto simp: sep_disj_addI3 emb_def sep_add_assoc dest: sep_add_disjD)
       done
     also have "\<dots> = (1\<^sub>q -*qq X) (h + h')" 
       unfolding sep_impl_qq_def  by simp
-    finally have "(1\<^sub>q -*qq X) h \<le> (1\<^sub>q -*qq X) (h + h')" .
-  } note * = this (* gives the lemma in the brackets a name *) 
-
-  show 1: "intuitionistic_q (1\<^sub>q -*qq X)"
-    apply(rule intuitionistic_qI2)
-    by(rule * )
+    finally show "(1\<^sub>q -*qq X) h \<le> (1\<^sub>q -*qq X) (h + h')" .
+  qed
 next
   fix h 
-  have "(1\<^sub>q -*qq X) h = (INFI {h'. h ## h' \<and> (bot < emb (\<lambda>s. True) h' \<or> bot < X (h + h')) \<and> (emb (\<lambda>s. True) h' < top \<or> X (h + h') < top)}
-        (\<lambda>h'. X (h + h') \<^bold>div emb (\<lambda>s. True) h'))"
+  have "(1\<^sub>q -*qq X) h = (INFI {h'. h ## h' \<and> (bot < emb (\<lambda>s. True) h' \<or> bot < X (h + h'))
+                                 \<and> (emb (\<lambda>s. True) h' < top \<or> X (h + h') < top)}
+                              (\<lambda>h'. X (h + h') \<^bold>div emb (\<lambda>s. True) h'))"
     unfolding sep_impl_qq_def by simp   
   also have "\<dots> \<le> X h"
     apply(cases "X h<top")
-    subgoal apply(rule INF_lower2[where i=0]) using FF  by (auto simp: emb_def divide_neutral)
+    subgoal by (rule INF_lower2[where i=0]) (auto simp: bot_not_neutral emb_def divide_neutral)
     subgoal by (auto simp: nn)
     done
   finally show "(1\<^sub>q -*qq X) h \<le> X h" . 
@@ -976,13 +904,14 @@ next
   fix h (* for arbitrary but fixed h *)
   have "X' h = (INFI {h'. h ## h' \<and> (\<^bold>1 < top \<or> X' (h + h') < top) } (\<lambda>h'. X' (h + h')) )"
     apply(rule intuitionistic_q_is_attained_at_h_wand) by fact
-  also have "\<dots> = (INFI {h'. h ## h' \<and> (bot < emb (\<lambda>s. True) h' \<or> bot < X' (h + h')) \<and> (emb (\<lambda>s. True) h' < top \<or> X' (h + h') < top)}
-        (\<lambda>h'. X' (h + h') \<^bold>div emb (\<lambda>s. True) h'))"
-    using FF by (auto simp: emb_def divide_neutral ) 
+  also have "\<dots> = (INFI {h'. h ## h' \<and> (bot < emb (\<lambda>s. True) h' \<or> bot < X' (h + h'))
+                         \<and> (emb (\<lambda>s. True) h' < top \<or> X' (h + h') < top)}
+                        (\<lambda>h'. X' (h + h') \<^bold>div emb (\<lambda>s. True) h'))"
+    using bot_not_neutral by (auto simp: emb_def divide_neutral ) 
   also have "\<dots> = (1\<^sub>q -*qq X') h"
     unfolding sep_impl_qq_def by simp
   also have "\<dots> \<le> (1\<^sub>q -*qq X) h" 
-    apply(rule sep_impl_q_monoR') by fact
+    apply(rule sep_impl_q_left_mono') by fact
   finally show "X' h \<le> (1\<^sub>q -*qq X) h" . 
 qed
 
@@ -1014,36 +943,12 @@ definition "one_bool == True"
 instance by standard
 end 
 
-print_classes
-
-typ "'a::{complete_lattice}"
-
-thm dual_complete_lattice
-(*
-interpretation ENNREAL_TIMES: quant_sep_con  Inf Sup inf "(\<le>)" "(<)" sup top bot "( * )" "1::ennreal" "(/)" 
-  unfolding quant_sep_con_def apply safe
-  subgoal by standard   
-  subgoal  by standard 
-  subgoal apply standard  
-    subgoal by (metis ennreal_one_neq_top mult.right_neutral mult_divide_eq_ennreal one_neq_zero) 
-    subgoal using ennreal_divide_eq_top_iff by auto    
-    subgoal by (simp add: bot_ennreal  ) 
-    subgoal sledgehammer  sorry 
-    subgoal sledgehammer  sorry 
-    subgoal by (simp add: bot_ennreal)    
-    subgoal sledgehammer  sorry 
-    subgoal sledgehammer  sorry 
-    subgoal sledgehammer  sorry 
-    subgoal sledgehammer  sorry 
-    done
-  done *)
-
-
-
-interpretation BOOL: quant_sep_con Inf Sup inf "(\<le>)" "(<)" sup top bot "(\<and>)" "True"  "\<lambda>x y. y \<longrightarrow> x"  
-  unfolding quant_sep_con_def apply safe
-  subgoal apply standard by auto
+interpretation BOOL: quant_sep_con Inf Sup inf "(\<le>)" "(<)" sup bot top
+      "(\<and>)" "True" "\<lambda>x y. y \<longrightarrow> x"
+  unfolding quant_sep_con_def comm_quantale_def apply safe
   subgoal by standard  
+  subgoal apply standard by auto 
+  subgoal apply standard by auto
   subgoal apply standard by auto 
   done
 
@@ -1080,17 +985,20 @@ text \<open>A locale assuming, that the neutral element is also the top element.
       (Bool,<=,and), ([0;1],<=,*) and (ennreal,>=,+) are three examples.
       (ennreal,<=,*) isn't.  \<close>
 
-locale quant_sep_con_one = quant_sep_con
- Inf   Sup inf le less sup top bot oper neutr divide   for
-    Inf :: "'b set \<Rightarrow> 'b" and Sup inf and le (infix "\<le>" 50) and less (infix "<" 50) and sup top bot and
-
-      oper :: "'b \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>*" 64)
+locale quant_sep_con_one = quant_sep_con Inf Sup inf le less sup bot top oper neutr divide
+  for Inf :: "'b set \<Rightarrow> 'b"
+    and Sup inf
+    and le (infix "\<le>" 50)
+    and less (infix "<" 50)
+    and sup top bot
+    and oper :: "'b \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>*" 64)
     and divide :: "'b \<Rightarrow> 'b \<Rightarrow> 'b"  (infixl "\<^bold>div" 64)
     and neutr :: "'b" ("\<^bold>1")
-  + assumes neutral_is_top: "\<^bold>1 = top"
-  and CC: "bot < (top::'b)"  
-
+    +
+  assumes neutral_is_top: "\<^bold>1 = top"
+    and CC: "bot < (top::'b)"  
 begin 
+
 context
   assumes "SORT_CONSTRAINT ('a::{sep_algebra})" 
 begin
@@ -1101,58 +1009,51 @@ lemma sep_impl_q_alt_general'':
   using sep_impl_q_alt_general neutral_is_top by auto
 
 lemma sep_impl_q_alt_general''':
-  fixes  Q :: "'a \<Rightarrow> 'b"
- 
-  shows 
-  "(P -*q Q) = (\<lambda>h. INFI { h'. h ## h' \<and> P h'} (\<lambda>h'. Q (h + h')))"
+  fixes  Q :: "'a \<Rightarrow> 'b" 
+  shows "(P -*q Q) = (\<lambda>h. INFI { h'. h ## h' \<and> P h'} (\<lambda>h'. Q (h + h')))"
 proof  (rule ext)
   fix h
-  have T: "{h'. h ## h' \<and> ((bot::'b) < emb P h' \<or> (bot::'b) < Q (h + h')) \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}
-      = {h'. h ## h' \<and>  (bot::'b) < emb P h' \<and> (emb P h' < (top::'b) \<or> Q (h + h') < top)}
-       \<union>  {h'. h ## h' \<and>(bot::'b) = emb P h' \<and> (bot::'b) < Q (h + h') \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}" 
+  let ?A ="{h'. h ## h' \<and> (bot::'b) < emb P h' \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}"
+  let ?C = " {h'. h ## h' \<and>(bot::'b) = emb P h' \<and> (bot::'b) < Q (h + h')
+                   \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}"
+  let ?B ="{h'.  h ## h'   \<and> Q (h + h') < top \<and> P h'}"
+  have T: "{h'. h ## h' \<and> ((bot::'b) < emb P h' \<or> (bot::'b) < Q (h + h'))
+               \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}
+            = ?A \<union> ?C" 
     using bot.not_eq_extremum by fastforce    
 
-  let ?A ="{h'. h ## h' \<and> (bot::'b) < emb P h' \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}"
-  let ?B ="{h'.  h ## h'   \<and> Q (h + h') < top \<and> P h'}"
-
-  have 1: "(INFI (?A) (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) = (INFI (?B) (\<lambda>x. Q (h + x)))"
+  have 1: "(INFI ?A (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) = (INFI ?B (\<lambda>x. Q (h + x)))"
     apply(rule INF_cong)
     subgoal
       apply rule 
-        subgoal (* ?A \<subseteq> ?B *) apply (auto simp: divide_neutral emb_def CC FF) using neutral_is_top by auto
-        subgoal (* ?B \<subseteq> ?A *) by (auto simp: divide_neutral emb_def CC FF)
-        done
+      subgoal (* ?A \<subseteq> ?B *)
+        by (auto simp: divide_neutral emb_def CC bot_not_neutral neutral_is_top[symmetric]) 
+      subgoal (* ?B \<subseteq> ?A *)
+        by (auto simp: divide_neutral emb_def CC bot_not_neutral)
+      done
     subgoal by (simp add: divide_neutral emb_def)  
     done 
- 
-  have 2: "(INFI {h'. h ## h' \<and> (bot::'b) = emb P h' \<and> (bot::'b) < Q (h + h')
-                    \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}
-                (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))
-      = top" 
+
+  have 2: "(INFI ?C (\<lambda>h'. Q (h + h') \<^bold>div emb P h')) = top" 
     unfolding emb_def apply auto 
     using divide_bot by simp_all    
 
-  have F: "{ h'. h ## h' \<and> P h'} = { h'. h ## h' \<and> P h' \<and> Q (h + h') = top} \<union> { h'. h ## h' \<and> P h' \<and> Q (h + h') < top}"
+  have F: "{ h'. h ## h' \<and> P h'}
+     = { h'. h ## h' \<and> P h' \<and> Q (h + h') = top} \<union> { h'. h ## h' \<and> P h' \<and> Q (h + h') < top}"
     using top.not_eq_extremum by blast
 
   have 3: "(INFI {h'. h ## h' \<and> P h' \<and> Q (h + h') = top} (\<lambda>h'. Q (h + h'))) = top"
     by auto
 
-  have "(P -*q Q) h = inf (INFI {h'. h ## h' \<and> (bot::'b) < emb P h' 
-                        \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}
-                            (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))
-                        (INFI {h'. h ## h' \<and> (bot::'b) = emb P h'\<and> (bot::'b) < Q (h + h') 
-                          \<and> (emb P h' < (top::'b) \<or> Q (h + h') < (top::'b))}
-                            (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))"
-    unfolding sep_impl_qq_def  
-    unfolding T
-    unfolding INF_union by simp
-  also have "\<dots>  = (INFI {h'.  h ## h'  \<and> Q (h + h') < top \<and> P h'} (\<lambda>x. Q (h + x)))"
+  have "(P -*q Q) h = inf (INFI ?A (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))
+                        (INFI ?C (\<lambda>h'. Q (h + h') \<^bold>div emb P h'))"
+    unfolding sep_impl_qq_def T INF_union
+    by simp
+  also have "\<dots>  = (INFI ?B (\<lambda>x. Q (h + x)))"
     unfolding 1 2 by simp
   also have "\<dots> = (INFI { h'. h ## h' \<and> P h'} (\<lambda>h'. Q (h + h')))"
-      unfolding F 
-    unfolding INF_union unfolding 3 apply simp
-    apply(rule INF_cong) by auto
+    unfolding F INF_union 3
+    by (auto intro: INF_cong)
   finally show "(P -*q Q) h = (INFI {h'. h ## h' \<and> P h'} (\<lambda>h'. Q (h + h')))" .
 qed
 

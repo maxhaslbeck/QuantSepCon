@@ -94,7 +94,7 @@ lemma sep_impl_s_q_Rmono:
     "(\<And>h. X h \<le> Y h) \<Longrightarrow> (A -\<star> X) sh \<le> (A -\<star> Y) sh" 
   unfolding sep_impl_s_q_def
   apply(cases sh) apply simp 
-  apply(rule sep_impl_q_monoR) 
+  apply(rule sep_impl_q_left_mono) 
   by (auto simp: le_fun_def emb_def)  
 
 lemma sep_impl_s_q_mono:
@@ -192,7 +192,7 @@ proof -
   also have "\<dots> = (SUPR {(x, y). h = x + y \<and> x ## y} (\<lambda>(x, y). X (s, h) \<^bold>* Y (s, x) \<^bold>* Z (s, y)))"
     apply(subst pure_q_norm[OF assms, where h'=h]) by simp
   also have "\<dots> = X (s, h) \<^bold>* (SUPR {(x, y). h = x + y \<and> x ## y} (\<lambda>(x, y).  Y (s, x) \<^bold>* Z (s, y)))"
-    by(auto simp: SUP_mult_left  assoc intro!: SUP_cong) 
+    by(auto simp: SUP_mult_left_distrib  assoc intro!: SUP_cong) 
   also have "\<dots> = X (s, h) \<^bold>* (sep_conj_s_q Y Z) (s,h)"
     apply auto unfolding sep_conj_s_q_def 
     apply simp unfolding sep_conj_q_alt 

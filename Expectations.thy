@@ -110,37 +110,26 @@ lemma ennreal_div_antimono:
 
 lemma eq79_ennreal: fixes A B C :: ennreal
   shows "(bot < C \<or> bot < B )  \<Longrightarrow> (C < top \<or> B < top) \<Longrightarrow> ( A \<le> B / C) \<longleftrightarrow> A * C \<le> B "
-  apply(cases "C<bot")
-  subgoal by auto
-  apply(cases "C < top")
-  subgoal   
-    by (metis bot.extremum bot_ennreal divide_less_ennreal  
-              ennreal_divide_eq_0_iff ennreal_divide_eq_top_iff
-              ennreal_times_divide leD le_less_linear top_greatest)   
-  subgoal  
-    by (metis bot.extremum_strict bot_ennreal ennreal_divide_top 
-              ennreal_mult_eq_top_iff mult_eq_0_iff nn nn_bot not_le)  
+  subgoal
+    apply(cases "C < top")
+    subgoal   
+      by (metis bot.extremum bot_ennreal divide_less_ennreal  
+          ennreal_divide_eq_0_iff ennreal_divide_eq_top_iff
+          ennreal_times_divide leD le_less_linear top_greatest)   
+    subgoal  
+      by (metis bot.extremum_strict bot_ennreal ennreal_divide_top 
+          ennreal_mult_eq_top_iff mult_eq_0_iff nn nn_bot not_le)  
+    done
   done
 
-interpretation Exp: quant_sep_con Inf Sup inf "(\<le>)" "(<)" sup top bot "(*)" "1::ennreal"  "(/)"   
-  apply standard subgoal  
-    by (simp add: ennreal_div_one)  
-  subgoal using ennreal_top_divide by simp
-  subgoal  
-    by (simp add: bot_ennreal)  
-  subgoal
-    by (simp add: divide_right_mono_ennreal)      
-  subgoal for a b c
-    using ennreal_div_antimono by simp
-  subgoal 
-    by (simp add: bot_ennreal)  
-  subgoal     
-    using SUP_mult_left_ennreal[where f=id] by simp 
-  subgoal 
-    by (auto simp: mult_mono)  
+interpretation Exp: quant_sep_con Inf Sup inf "(\<le>)" "(<)" sup bot top "(*)" "1::ennreal"  "(/)"   
+  apply standard
+  subgoal using SUP_mult_left_ennreal[where f=id] by simp 
+  subgoal by (simp add: ennreal_div_one)  
+  subgoal by (simp add: divide_right_mono_ennreal)      
+  subgoal using ennreal_div_antimono by simp
   subgoal apply(rule eq79_ennreal) by auto
-  subgoal 
-    by (simp add: bot_ennreal)  
+  subgoal by (simp add: bot_ennreal)  
   done
 
 subsubsection \<open>Star and Magic Wand\<close>

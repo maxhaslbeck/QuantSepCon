@@ -18,29 +18,27 @@ lemma nn: "(\<not> x < (top::'b::{complete_lattice})) = (x = top)"
 lemma nn_bot: "(\<not> x > (bot::'b::{complete_lattice})) = (x = bot)" 
   using bot.not_eq_extremum by blast
 
+
+thm Inf_mono
 (* I think this rule is actually stronger than Inf_mono *)
-lemma Inf_mono_my:
-  assumes "\<And>b::'c::{complete_lattice}. b \<in> B \<Longrightarrow> b < top \<Longrightarrow> \<exists>a\<in>A. a \<le> b"
-  shows "Inf A \<le> Inf B"
+lemma (in complete_lattice) 
+  assumes "\<And>b. b \<in> B \<Longrightarrow> b < top \<Longrightarrow> \<exists>a\<in>A. a \<le> b"
+  shows Inf_mono_strong: "Inf A \<le> Inf B"
 proof (rule Inf_greatest)
   fix b assume bB: "b \<in> B"
-    show "Inf A \<le> b" proof (cases "b<top")
-      case True       
+  show "Inf A \<le> b" proof (cases "b<top")
+    case True       
     with bB assms obtain a where "a \<in> A" and "a \<le> b" by blast
     from \<open>a \<in> A\<close> have "Inf A \<le> a" by (rule Inf_lower)
- 
+
     with \<open>a \<le> b\<close>  show ?thesis  by simp
-    next
-      case False 
-      then have "b=top" 
-        using top.not_eq_extremum by blast  
-      then show ?thesis  by simp
-    qed
+  next
+    case False 
+    then have "b=top" 
+      using top.not_eq_extremum by blast  
+    then show ?thesis  by simp
   qed
-
-lemma INF_mono_my: "(\<And>m. m \<in> B \<Longrightarrow> g m < top \<Longrightarrow> \<exists>n\<in>A. f n \<le> g m) \<Longrightarrow> (INF n:A. (f n) ::'c::{complete_lattice}) \<le> (INF n:B. g n)"
-  using Inf_mono_my [of "g ` B" "f ` A"] by auto
-
+qed 
 
 subsection \<open>Stuff about SUP and various operations\<close>
 
