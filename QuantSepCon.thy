@@ -7,7 +7,7 @@ theory QuantSepCon
   imports 
     "Separation_Algebra.Separation_Algebra" "HOL-Library.Extended_Nat"
     "HOL-Library.Extended_Nonnegative_Real" 
-    Misc        
+    QSL_Misc        
 begin 
 
 
@@ -47,6 +47,11 @@ lemma oper_right_mono: "\<And>a b c. a \<le> b \<Longrightarrow> a \<^bold>* c \
 lemma oper_mono: "\<And>a b c d. a \<le> b \<Longrightarrow> c \<le> d \<Longrightarrow> a \<^bold>* c \<le> b \<^bold>* d"
   apply (erule oper_right_mono [THEN order_trans])
   by (erule oper_left_mono)
+
+
+(* conjecture: there is a Galois Connection *)
+lemma "\<exists>f. (\<forall>A B C. (A \<le> (f C) B) \<longleftrightarrow> ((\<^bold>*) C) A \<le> B)"
+  oops
 
 end
 

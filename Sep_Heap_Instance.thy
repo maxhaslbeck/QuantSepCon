@@ -1,5 +1,5 @@
 theory Sep_Heap_Instance
-imports Misc
+imports QSL_Misc
 begin
 
 

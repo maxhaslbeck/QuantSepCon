@@ -65,8 +65,8 @@ lemma "ert P (\<lambda>_. 0) x \<le> 2"
   apply(cases x) apply auto
   apply(rule SUP_least) by simp  
 
-
-
+lemma "(\<lambda>(s,h). if empb (s,h) then 2::ennreal else \<infinity>) \<ge> (\<lambda>_. 2)"
+  apply (rule le_funI) by auto
 
 
 end

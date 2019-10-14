@@ -1,4 +1,4 @@
-theory Misc
+theory QSL_Misc
   imports   Sep_Algebra_Add
   "HOL-Library.Extended_Nonnegative_Real"
 begin
