@@ -136,7 +136,7 @@ lemma fixes P :: "_ * ('a:: sep_algebra) \<Rightarrow> ennreal"
   by simp
     
  
-
+lemmas star_pot_method_mono = ENNREAL_PLUS.sep_conj_s_q_mono[folded star_pot_method_def]
 
 lemmas theorem_3_6_s_2 = ENNREAL_PLUS.theorem_3_6_s(2)[folded star_pot_method_def emb\<^sub>p_def]  
 
@@ -144,7 +144,14 @@ lemmas theorem_3_6_s_2 = ENNREAL_PLUS.theorem_3_6_s(2)[folded star_pot_method_de
  
 lemmas wand_pot_method_mono = ENNREAL_PLUS.sep_impl_s_q_mono[folded wand_pot_method_def sep_empty\<^sub>p_def] 
 
+lemmas wand_pot_method_Rmono = ENNREAL_PLUS.sep_impl_s_q_Rmono[folded wand_pot_method_def sep_empty\<^sub>p_def] 
+
+
+
 lemmas adjoint_general_s = ENNREAL_PLUS.adjoint_general_s[folded wand_pot_method_def star_pot_method_def] 
+lemma adjoint_general_s':
+  "Y \<le> (X \<star>\<^sub>p P) \<longleftrightarrow> (P -\<star>\<^sub>p Y)  \<le> X"
+  using adjoint_general_s[of Y X P] unfolding le_fun_def by auto
 
 
 lemmas quant_modus_ponens_general_s = ENNREAL_PLUS.quant_modus_ponens_general_s[folded wand_pot_method_def star_pot_method_def]  
