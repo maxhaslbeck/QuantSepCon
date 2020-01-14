@@ -53,6 +53,37 @@ lemma oper_mono: "\<And>a b c d. a \<le> b \<Longrightarrow> c \<le> d \<Longrig
 lemma "\<exists>f. (\<forall>A B C. (A \<le> (f C) B) \<longleftrightarrow> ((\<^bold>*) C) A \<le> B)"
   oops
 
+
+  text \<open>residual\<close>
+
+definition residual where
+  "residual x z = Sup {y. x \<^bold>* y \<le> z}"
+
+lemma residual_imp: "x \<^bold>* y \<le> z \<Longrightarrow> y \<le> residual x z"
+  unfolding residual_def
+  apply(rule Sup_upper) by simp
+
+lemma residual_imp': "y \<le> residual x z \<Longrightarrow> x \<^bold>* y \<le> z"
+proof -
+  assume "y \<le> residual x z"
+  then have "x \<^bold>* y \<le> x \<^bold>* residual x z" by(rule oper_left_mono)
+  also have "\<dots> =  x \<^bold>* \<Squnion>{y. x \<^bold>* y \<le> z}" unfolding residual_def by simp
+  also have "\<dots> = \<Squnion>{x  \<^bold>* y | y . x \<^bold>* y \<le> z}" apply(subst Sup_mult_left_distrib)
+    apply(rule arg_cong[where f=Sup]) by auto
+  also have "\<dots> \<le> \<Squnion>{k | k . k \<le> z}" apply(rule Sup_mono) by auto
+  also have "\<dots> \<le> z" apply(rule Sup_least) by auto
+  finally show ?thesis .
+qed
+
+lemma residual_adjoint: "x \<^bold>* y \<le> z \<longleftrightarrow> y \<le> residual x z"
+  using residual_imp residual_imp' by blast
+
+
+(* indeed :) *)
+lemma "\<exists>f. (\<forall>A B C. (A \<le> (f C) B) \<longleftrightarrow> ((\<^bold>*) C) A \<le> B)"
+  apply(rule exI[where x=residual]) 
+  using residual_adjoint by simp
+
 end
 
 
