@@ -106,7 +106,11 @@ lemma sep_impl_s_q_mono:
 lemma sep_conj_s_q_mono:
     "(\<And>sh. A sh \<le> B sh) \<Longrightarrow> (\<And>sh. X sh \<le> Y sh) \<Longrightarrow> (A \<star> X) sh \<le> (B \<star> Y) sh"
     unfolding sep_conj_s_q_def
-  apply(cases sh) by (auto intro: sep_conj_q_mono) 
+    apply(cases sh) by (auto intro: sep_conj_q_mono) 
+
+lemma sep_conj_s_q_mono_more:
+    "(\<And>h. A (s,h) \<le> B (s,h)) \<Longrightarrow> (\<And>h. X (s,h) \<le> Y (s,h)) \<Longrightarrow> (A \<star> X) (s,h)\<le> (B \<star> Y) (s,h)"
+    unfolding sep_conj_s_q_def  by (auto intro: sep_conj_q_mono) 
 
 subsubsection \<open>Adjointness\<close>
 
@@ -126,6 +130,14 @@ lemma adjoint_general_s:
   subgoal     apply(rule adjoint_general'1) by auto 
   subgoal     apply(rule adjoint_general'2) by auto 
   done 
+lemma adjoint_general_s_liberal:
+  shows "(\<forall>h. (X \<star> P) (s,h) \<le> Y (s,h)) \<longleftrightarrow> (\<forall>h. X (s,h) \<le> (P -\<star> Y) (s,h))" 
+  unfolding sep_conj_s_q_def sep_impl_s_q_def
+  unfolding le_fun_def apply auto
+  subgoal     apply(rule adjoint_general'1) by auto 
+  subgoal     apply(rule adjoint_general'2) by auto 
+  done 
+
 
 lemma quant_modus_ponens_general_s:
   shows "( P \<star> (P -\<star> X)) sh \<le> X sh"

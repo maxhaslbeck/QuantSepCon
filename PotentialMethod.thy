@@ -23,6 +23,7 @@ lemma INF_ennreal_add_const_local2:
     by (auto simp: image_comp mono_def) 
   done
 
+
 lemma INF_ennreal_const_add':
   fixes f g :: "_ \<Rightarrow> ennreal" 
   shows "(INF i:I. c + f i) = c + (INF i:I. f i)" 
@@ -58,6 +59,11 @@ lemma star_pot_method_alt':
 lemma star_pot_method_alt:
   "(P \<star>\<^sub>p Q) = (\<lambda>(s,h). Inf { P(s,x) + Q(s,y) | x y. h=x+y \<and> x ## y})"
   unfolding star_pot_method_alt' by simp
+
+lemma star_pot_method_alt'':
+  "(P \<star>\<^sub>p Q) = (\<lambda>(s,h). INF (x,y): { (x, y). h=x+y \<and> x ## y}. P(s,x) + Q(s,y) )"
+  unfolding star_pot_method_alt'  
+  by (metis (no_types) ENNREAL_PLUS.sep_conj_q_alt ENNREAL_PLUS.sep_conj_q_def)  
 
  
 definition wand_pot_method (infixr "-\<star>\<^sub>p" 35) where
@@ -137,6 +143,7 @@ lemma fixes P :: "_ * ('a:: sep_algebra) \<Rightarrow> ennreal"
     
  
 lemmas star_pot_method_mono = ENNREAL_PLUS.sep_conj_s_q_mono[folded star_pot_method_def]
+lemmas star_pot_method_mono_more = ENNREAL_PLUS.sep_conj_s_q_mono_more[folded star_pot_method_def]
 
 lemmas theorem_3_6_s_2 = ENNREAL_PLUS.theorem_3_6_s(2)[folded star_pot_method_def emb\<^sub>p_def]  
 
@@ -148,7 +155,8 @@ lemmas wand_pot_method_Rmono = ENNREAL_PLUS.sep_impl_s_q_Rmono[folded wand_pot_m
 
 
 
-lemmas adjoint_general_s = ENNREAL_PLUS.adjoint_general_s[folded wand_pot_method_def star_pot_method_def] 
+lemmas adjoint_general_s = ENNREAL_PLUS.adjoint_general_s[folded wand_pot_method_def star_pot_method_def]
+lemmas adjoint_general_s_liberal = ENNREAL_PLUS.adjoint_general_s_liberal[folded wand_pot_method_def star_pot_method_def] 
 lemma adjoint_general_s':
   "Y \<le> (X \<star>\<^sub>p P) \<longleftrightarrow> (P -\<star>\<^sub>p Y)  \<le> X"
   using adjoint_general_s[of Y X P] unfolding le_fun_def by auto
