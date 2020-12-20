@@ -46,7 +46,7 @@ subsection \<open>Stuff about SUP and various operations\<close>
 lemma Sup_cong: "\<And>S S'. S=S' \<Longrightarrow> Sup S = Sup S'"
   by simp
 
-lemma SUP_plus_subdistrib: "\<And>S. \<And>f g::_\<Rightarrow>'b::{complete_lattice,ordered_ab_semigroup_add }. (SUP x:S. f x + g x) \<le> (SUP x:S. f x) + (SUP x:S. g x)"
+lemma SUP_plus_subdistrib: "\<And>S. \<And>f g::_\<Rightarrow>'b::{complete_lattice,ordered_ab_semigroup_add }. (SUP x\<in>S. f x + g x) \<le> (SUP x\<in>S. f x) + (SUP x\<in>S. g x)"
   by (simp add: SUP_least SUP_upper add_mono)
 
 

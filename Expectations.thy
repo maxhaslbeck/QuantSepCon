@@ -16,11 +16,11 @@ lemma ennreal_div_one: "x / 1 = (x::ennreal)"
   by (metis ennreal_top_neq_one mult.right_neutral mult_divide_eq_ennreal one_neq_zero)
 
 lemma SUP_plus_subdistrib2:
-  "(SUP (h1,h2):A.  f h1 h2 + g h1 h2 :: ennreal) \<le> (SUP (h1,h2):A.  f h1 h2) + (SUP (h1,h2):A.  g h1 h2)"
+  "(SUP (h1,h2)\<in>A.  f h1 h2 + g h1 h2 :: ennreal) \<le> (SUP (h1,h2)\<in>A.  f h1 h2) + (SUP (h1,h2)\<in>A.  g h1 h2)"
   apply(rule Sup_least) apply auto 
   apply(rule add_mono) by(auto intro: SUP_upper2)  
 
-lemma SUP_plus_subdistrib_ennreal: "\<And>S. \<And>f g::_\<Rightarrow>ennreal. (SUP x:S. f x + g x) \<le> (SUP x:S. f x) + (SUP x:S. g x)"
+lemma SUP_plus_subdistrib_ennreal: "\<And>S. \<And>f g::_\<Rightarrow>ennreal. (SUP x\<in>S. f x + g x) \<le> (SUP x\<in>S. f x) + (SUP x\<in>S. g x)"
       by (simp add: SUP_least SUP_upper add_mono)
 
 
@@ -144,7 +144,7 @@ lemma sep_conj_e_alt:
   by (simp add: sep_conj_e_def Exp.sep_conj_q_def)
 
 lemma sep_impl_e_alt:
-  "(P -*\<^sub>e Q) = (\<lambda>h. INF h': { h'. h ## h' \<and> (bot < P h' \<or> bot < Q (h+h') )
+  "(P -*\<^sub>e Q) = (\<lambda>h. INF h'\<in> { h'. h ## h' \<and> (bot < P h' \<or> bot < Q (h+h') )
                                 \<and> (P h' < top \<or> Q (h+h') < top)}. 
                                     (Q (h + h')) / (P h'))"
   by (simp add: Exp.sep_impl_qq_def sep_impl_e_def)
@@ -157,7 +157,7 @@ lemma quant_wand_conservative:
   using Exp.quant_wand_conservative unfolding emb\<^sub>e_def sep_impl_e_def by blast
 
 lemma sep_impl_q_alt_general:
-  "inf 1 ((emb\<^sub>e P -*\<^sub>e Q) h) = inf 1 (INF h': { h'. h ## h' \<and> P h'}. Q (h + h'))"
+  "inf 1 ((emb\<^sub>e P -*\<^sub>e Q) h) = inf 1 (INF h'\<in> { h'. h ## h' \<and> P h'}. Q (h + h'))"
   using Exp.sep_impl_q_alt_general unfolding emb\<^sub>e_def sep_impl_e_def by blast 
 
 
@@ -283,7 +283,7 @@ lemma sep_conj_es_alt:
   by (simp add: Exp.sep_conj_s_q_def Exp.sep_conj_q_def sep_conj_es_def)
 
 lemma sep_impl_es_alt:
-  "(P -\<star>\<^sub>e Q) = (\<lambda>(s,h). INF h': { h'. h ## h' \<and> (bot < P(s,h') \<or> bot < Q(s,h+h') )
+  "(P -\<star>\<^sub>e Q) = (\<lambda>(s,h). INF h'\<in> { h'. h ## h' \<and> (bot < P(s,h') \<or> bot < Q(s,h+h') )
                                 \<and> ( P(s,h') < top \<or> Q(s,h+h') < top)}. 
                                     (Q (s,h + h')) / P (s,h') )"
   by (simp add: Exp.sep_impl_qq_def Exp.sep_impl_s_q_def sep_impl_es_def)

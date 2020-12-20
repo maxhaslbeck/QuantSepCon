@@ -1,5 +1,5 @@
 theory NewDomain          
-imports QuantSepCon "../Sepreftime/Sepreftime"
+imports QuantSepCon "../NREST/NREST"
  begin
 
 
@@ -226,5 +226,7 @@ interpretation ENOPT_PLUS:
     subgoal unfolding bot_option_def by simp  
     done
   subgoal apply standard apply (auto simp: bot_option_def top_option_def top_enat_def)
-  done 
+    oops
+
+
 end
