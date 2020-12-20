@@ -1,7 +1,20 @@
-theory QuantSepConState
-imports QuantSepCon
+\<^marker>\<open>creator "Maximilian P. L. Haslbeck"\<close>
+chapter \<open>Quantitative Assertion Language with State\<close>
+theory Assertions_With_State
+imports Quantitative_Separation_Connectives
 begin
 
+paragraph \<open>Summary\<close>
+
+text \<open>In this theory we augment the quantitative assertion language over a separation algebra 
+      (we now call "heap") to a an assertion language over a pair of state and heap.
+
+      We lift the quantitative separating connectives to pairs of state and heap.
+      \<close>
+
+
+
+subsection \<open>Assertion Language With state\<close>
 
 
 context  quant_sep_con
@@ -20,7 +33,6 @@ abbreviation embn ("\<lbrakk>~_\<rbrakk>") where "embn b \<equiv> (\<lambda>(s,h
 
  
 
-subsection \<open>With state\<close>
 
 definition
   sep_impl_s_q  (infixr "-\<star>" 60)

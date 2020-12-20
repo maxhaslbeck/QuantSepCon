@@ -1,17 +1,26 @@
-(*
-  Author: Maximilian P. L. Haslbeck
-  Author: Christoph Matheja
-  Author: Kevin Batz
-*)
-theory QuantSepCon
+\<^marker>\<open>creator "Maximilian P. L. Haslbeck"\<close>
+\<^marker>\<open>contributor "Christoph Matheja"\<close>
+\<^marker>\<open>contributor "Kevin Batz"\<close>
+chapter \<open>Quantitative Separating Connectives\<close>
+theory Quantitative_Separation_Connectives
   imports 
     "Separation_Algebra.Separation_Algebra" "HOL-Library.Extended_Nat"
     "HOL-Library.Extended_Nonnegative_Real" 
     QSL_Misc        
 begin 
 
+paragraph \<open>Summary\<close>
 
-section \<open>Quantitative Separating Connectives\<close>
+
+text \<open>In this theory we introduce the quantitative separating connectives for an arbitrary
+    separation algebra and an measurement quantale.
+
+    We define the quantitative separating conjunction, and magic wand.
+    Then we prove adjointness of that the operators 
+
+    We follow the Paper by Batz et al.  @{cite batzPOPL19}.
+  \<close>
+
 
 term "class.complete_lattice"
 

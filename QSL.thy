@@ -1,8 +1,20 @@
+\<^marker>\<open>creator "Maximilian P. L. Haslbeck"\<close>
+chapter \<open>Quantitative Separation Logic\<close>
 theory QSL
 imports
-  "Expectations"
+  "QSL_For_Expectations"
   "Sep_Heap_Instance"
 begin
+
+
+paragraph \<open>Summary\<close>
+
+text \<open>This theory provides the primitives of for the quantitative separation logic
+      on heaps.
+
+      We follow the paper by Batz et al. @{cite batzPOPL19}.
+    \<close>
+
 
 section \<open>Heap-predicates and quantities\<close>
 
@@ -81,7 +93,7 @@ lemma assumes "h= heap_of_map [1 \<mapsto> 2, 2 \<mapsto> 3, 4 \<mapsto> 5]"
     
     "( [(\<lambda>_. 1)\<mapsto>(\<lambda>_. 2)] -\<star>\<^sub>e size ) (s,h) = \<infinity>"
     "( [(\<lambda>_. 3)\<mapsto>(\<lambda>_. 4)] -\<star>\<^sub>e ([(\<lambda>_. 3)\<mapsto>(\<lambda>_. 4)] -\<star>\<^sub>e size) ) (s,h) = \<infinity>"  
-  sorry
+  oops
 
 
 

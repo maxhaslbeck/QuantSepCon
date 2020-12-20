@@ -1,6 +1,18 @@
-theory Probabilities
-imports QuantSepConState
+\<^marker>\<open>creator "Maximilian P. L. Haslbeck"\<close>
+chapter \<open>Quantitative Separation Logic for probabilities\<close>
+theory QSL_For_Probabilities
+imports
+ Assertions_With_State
 begin
+
+
+paragraph \<open>Summary\<close>                 
+
+text \<open>This theory instantiates the Quantitative Separation Logic language with the
+        quantale for probabilities ([0;1],<=,*,/).
+
+      It is the instance \<open>E\<^sub>\<le>\<^sub>1\<close> described in the paper by Batz et al. @{cite batzPOPL19}.
+    \<close>
 
 
 
@@ -167,7 +179,7 @@ lemma sep_conj_us_alt:
 term sep_impl_us
 
 lemma sep_impl_us_alt:
-  "(P -\<star>\<^sub>u Q) = (\<lambda>(s,h). INF h': { h'. h ## h' \<and> (bot < P(s,h') \<or> bot < Q(s,h+h') )
+  "(P -\<star>\<^sub>u Q) = (\<lambda>(s,h). INF h'\<in> { h'. h ## h' \<and> (bot < P(s,h') \<or> bot < Q(s,h+h') )
                                 \<and> ( P(s,h') < top \<or> Q(s,h+h') < top)}. 
                                    Q (s,h + h') /\<^sub>u P (s,h') )"
   by (simp add: PROB.sep_impl_qq_def PROB.sep_impl_s_q_def  sep_impl_us_def)

@@ -1,7 +1,17 @@
-theory NewDomain          
-imports QuantSepCon "../NREST/NREST"
+\<^marker>\<open>creator "Maximilian P. L. Haslbeck"\<close>
+chapter \<open>Quantitative Separation Logic for other domains\<close>
+theory QSL_For_Experimental_Domains
+imports Quantitative_Separation_Connectives "NREST.NREST"
  begin
 
+
+paragraph \<open>Summary\<close>                 
+
+text \<open>This experimental theory tries to instantiate the quantitative separation logic
+      with (enat option,>=,+,-).
+
+      Apparently the theory still fails, maybe this domain is not really quantale?
+    \<close>
 
 
  term mm2

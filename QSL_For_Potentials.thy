@@ -1,20 +1,22 @@
-theory PotentialMethod
-imports QuantSepConState
+\<^marker>\<open>creator "Maximilian P. L. Haslbeck"\<close>
+theory QSL_For_Potentials
+imports Assertions_With_State
 begin
 
 
+paragraph \<open>Summary\<close>
+
+text \<open>This theory instantiates the Quantitative Separation Logic language with the
+        quantale for potentials (ennreal,>=,+,-).
+
+    \<close>
 
 
-section "showing quantitative separation connectives for ennreal with plus"
-
-
-
-                    
-thm INF_ennreal_add_const
+section "showing quantitative separating connectives for ennreal with plus"
 
 lemma INF_ennreal_add_const_local2:
   fixes f g :: "_ \<Rightarrow> ennreal"
-  shows "(INF i:A. f i + c) = (INF i:A. f i) + c"
+  shows "(INF i\<in>A. f i + c) = (INF i\<in>A. f i) + c"
   apply(cases  "A={}")
   subgoal by simp
   subgoal 
@@ -26,7 +28,7 @@ lemma INF_ennreal_add_const_local2:
 
 lemma INF_ennreal_const_add':
   fixes f g :: "_ \<Rightarrow> ennreal" 
-  shows "(INF i:I. c + f i) = c + (INF i:I. f i)" 
+  shows "(INF i\<in>I. c + f i) = c + (INF i\<in>I. f i)" 
     using   INF_ennreal_add_const_local2[of f c I ] by (simp add: ac_simps) 
  
 
@@ -61,7 +63,7 @@ lemma star_pot_method_alt:
   unfolding star_pot_method_alt' by simp
 
 lemma star_pot_method_alt'':
-  "(P \<star>\<^sub>p Q) = (\<lambda>(s,h). INF (x,y): { (x, y). h=x+y \<and> x ## y}. P(s,x) + Q(s,y) )"
+  "(P \<star>\<^sub>p Q) = (\<lambda>(s,h). INF (x,y)\<in> { (x, y). h=x+y \<and> x ## y}. P(s,x) + Q(s,y) )"
   unfolding star_pot_method_alt'  
   by (metis (no_types) ENNREAL_PLUS.sep_conj_q_alt ENNREAL_PLUS.sep_conj_q_def)  
 
@@ -71,12 +73,12 @@ definition wand_pot_method (infixr "-\<star>\<^sub>p" 35) where
   
 
 lemma wand_pot_method_alt': 
-  "(-\<star>\<^sub>p) = (\<lambda>P Q a. case a of (s, h) \<Rightarrow> SUP h':{h'. h ## h' \<and> (P (s, h') < top \<or> Q (s, h + h') < top) \<and> (bot < P (s, h') \<or> bot < Q (s, h + h'))}. Q (s, h + h') - P (s, h'))"
+  "(-\<star>\<^sub>p) = (\<lambda>P Q a. case a of (s, h) \<Rightarrow> SUP h'\<in>{h'. h ## h' \<and> (P (s, h') < top \<or> Q (s, h + h') < top) \<and> (bot < P (s, h') \<or> bot < Q (s, h + h'))}. Q (s, h + h') - P (s, h'))"
   unfolding wand_pot_method_def ENNREAL_PLUS.sep_impl_s_q_def ENNREAL_PLUS.sep_impl_qq_def
   by auto    
 
 lemma wand_pot_method_alt:
-  "(P -\<star>\<^sub>p Q) = (\<lambda>(s,h). SUP h': { h'. h ## h' \<and> (bot < P(s,h') \<or> bot < Q(s,h+h') )
+  "(P -\<star>\<^sub>p Q) = (\<lambda>(s,h). SUP h'\<in> { h'. h ## h' \<and> (bot < P(s,h') \<or> bot < Q(s,h+h') )
                                 \<and> ( P(s,h') < top \<or> Q(s,h+h') < top)}. 
                                     (Q (s,h + h')) - P (s,h') )"
   unfolding wand_pot_method_alt'    by(force intro: SUP_cong)
@@ -99,7 +101,7 @@ lemma grr: "(\<lambda>h. emb\<^sub>p P (s, h)) = emb\<^sub>p (\<lambda>h. P (s, 
   unfolding emb\<^sub>p_alt by auto
 
 lemma wand_pot_method_emb_alt:
-  "((emb\<^sub>p P) -\<star>\<^sub>p Q) = (\<lambda>(s, h). SUP h':{h'. h ## h' \<and> P (s, h')}. Q (s, h + h'))"
+  "((emb\<^sub>p P) -\<star>\<^sub>p Q) = (\<lambda>(s, h). SUP h'\<in>{h'. h ## h' \<and> P (s, h')}. Q (s, h + h'))"
   unfolding wand_pot_method_def 
   unfolding ENNREAL_PLUS.sep_impl_s_q_def
   unfolding grr 
@@ -183,10 +185,10 @@ class divide_right_mono = inverse + order +
   assumes divide_right_mono_general: "\<And>a b c::'a. a \<le> b \<Longrightarrow> a / c \<le> b / c" 
 
 class SUP_mult_left = complete_lattice + times +
-  assumes SUP_mult_left: "c * (SUP i:I. f i) = (SUP i:I. c * f i :: 'a)"
+  assumes SUP_mult_left: "c * (SUP i\<in>I. f i) = (SUP i\<in>I. c * f i :: 'a)"
 begin
 
-lemma   SUP_mult_right: "(SUP i:I. f i) * c = (SUP i:I. f i * c :: 'a)"
+lemma   SUP_mult_right: "(SUP i\<in>I. f i) * c = (SUP i\<in>I. f i * c :: 'a)"
   oops
 
 end
@@ -274,21 +276,26 @@ instance ennreal :: nonnegative
   apply(standard) by auto
 
 
-lemma SUP_times_distrib: "(SUP x:A. f x * g x::ennreal) \<le> (SUP x:A. f x) * (SUP x:A. g x)"
+lemma SUP_times_distrib: "(SUP xA. f x * g x::ennreal) \<le> (SUP xA. f x) * (SUP xA. g x)"
       by (simp add: SUP_least SUP_upper mult_mono)
 
-lemma SUP_times_distrib2: "(SUP (x,y):A. f x y * g x y::ennreal) \<le> (SUP (x, y):A. f x y) * (SUP (x, y):A. g x y)" 
+lemma SUP_times_distrib2: "(SUP (x,y)A. f x y * g x y::ennreal) \<le> (SUP (x, y)A. f x y) * (SUP (x, y)A. g x y)" 
   apply(rule Sup_least) apply auto 
-  apply(rule mult_mono) by(auto intro: SUP_upper2)  
-
+  apply(rule mult_mono) apply(auto simp: image_image SUP_image intro:  SUP_upper)
+  subgoal by (metis ENNREAL_PLUS.INF_lower UNIV_I old.prod.case)
+  subgoal
+    by (metis ENNREAL_PLUS.INF_lower UNIV_I old.prod.case) 
+  done
 
 lemma SUP_times_distrib2_general:
   fixes g :: "_\<Rightarrow>_\<Rightarrow>'b::{complete_lattice,ordered_semiring, nonnegative}"
-  shows "(SUP (x,y):A. f x y * g x y) \<le> (SUP (x, y):A. f x y) * (SUP (x, y):A. g x y)" 
+  shows "(SUP (x,y)A. f x y * g x y) \<le> (SUP (x, y)A. f x y) * (SUP (x, y)A. g x y)" 
   apply(rule SUP_least)
   apply auto apply(rule mult_mono)
-      by (auto intro: SUP_upper2 simp: zero_smallest)
-
+     apply (auto intro: SUP_upper2 simp: SUP_image zero_smallest) 
+  subgoal by (metis SUP_upper UNIV_I prod.simps(2))
+  subgoal by (metis SUP_le_iff UNIV_I case_prod_conv order_refl) 
+  done
 
 
 

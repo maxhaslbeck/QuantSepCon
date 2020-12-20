@@ -1,7 +1,18 @@
-theory hpGCL
+\<^marker>\<open>creator "Maximilian P. L. Haslbeck"\<close>
+chapter \<open>The heap-manipulating probabilistic guarded command language\<close>
+theory HPGCL
   imports 
     "Sep_Heap_Instance"
 begin
+
+
+paragraph \<open>Summary\<close>
+
+text \<open>This theory introduces the  heap-manipulating probabilistic guarded command language (hpGCL)
+      from the Paper by Batz et al @{cite batzPOPL19}.\<close>
+
+
+
 
 
 subsection "hpGCL"

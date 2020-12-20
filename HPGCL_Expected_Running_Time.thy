@@ -1,7 +1,20 @@
-theory ERT
-imports PotentialMethod
- Sep_Heap_Instance hpGCL "HOL-Eisbach.Eisbach"
+\<^marker>\<open>creator "Maximilian P. L. Haslbeck"\<close>
+chapter \<open>A Calculus for the expected running time of hpGCL\<close>
+theory HPGCL_Expected_Running_Time
+imports QSL_For_Potentials
+ HPGCL "HOL-Eisbach.Eisbach"
 begin
+
+
+paragraph \<open>Summary\<close>
+
+text \<open>This theory introduces the an expected running time (ERT) calculus
+        for hpGCL.
+
+      We use the ert calculus for pGCL and extend it to heap manipulating programs.
+
+  
+      This theory is experimental.\<close>
 
 
 
@@ -739,9 +752,11 @@ lemma propagate_trueheap:
     "trueheap (x(var:=val),y) = trueheap (x,y)"
   unfolding trueheap_def by auto
 
+(*
 lemma propagate_ptany: "ptany addr ((fst h)(var:=val),snd h) = ptany (\<lambda>s. addr(s(var:=val))) h"
     "ptany addr (x(var:=val),y) = ptany (\<lambda>s. addr(s(var:=val))) (x,y)" 
   unfolding ptany_def by (auto  simp add: split_beta)
+*)
 
 lemma u: "\<And>x aa c X. (X \<star>\<^sub>p trueheap) x + c = (X \<star>\<^sub>p (\<lambda>sh. trueheap sh +  c)) x"
   sorry
@@ -787,6 +802,10 @@ lemma assumes "G=(\<lambda>_.0)"
   subgoal (* loop init *)
     apply(auto simp  add: split_beta) sorry
   done
+
+
+text \<open>The theory is broken from here.\<close>
+\<^cancel>\<open>
 
 lemma assumes "G=(\<lambda>_.0)"
   shows "ert P G x \<le> ([(\<lambda>s. s ''y'') \<mapsto> -] \<star>\<^sub>p trueheap) x + 6"
@@ -1043,6 +1062,6 @@ lemma "ert P (\<lambda>_. 0) x \<le> 2"
   apply(simp add: split_beta)
   apply auto oops
 
-
+\<close>
 
 end

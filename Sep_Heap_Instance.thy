@@ -1,7 +1,17 @@
+\<^marker>\<open>creator "Maximilian P. L. Haslbeck"\<close>
+chapter \<open>Heap instance of Separation Algebra\<close>
 theory Sep_Heap_Instance
 imports QSL_Misc
 begin
 
+paragraph \<open>Summary\<close>
+
+text \<open>We introduce a heap instance for separation algebra.
+
+    We define general assertions in a separation algebra, like
+    points to assertions, and an assertion for the empty heap.\<close>
+
+subsection "basic expectations"
 
 
 type_synonym vars = string
@@ -17,7 +27,6 @@ text \<open>Instead of @{typ \<open>'a option\<close>} we use @{typ "'a tsa_opt"
 type_synonym heap = "addrs \<Rightarrow> int tsa_opt"
 
 
-subsection "basic expectations"
  
 text \<open>conversion from a heap to a map from addresses to values\<close>
 definition map_of_heap :: "heap \<Rightarrow> addrs \<Rightarrow> val option"  where

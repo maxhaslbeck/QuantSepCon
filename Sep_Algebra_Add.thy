@@ -1,7 +1,15 @@
-(* Author: Peter Lammich *)
+\<^marker>\<open>creator "Peter Lammich"\<close>
+\<^marker>\<open>contributor "Maximilian P. L. Haslbeck"\<close>
+chapter \<open>Misc Theory for Separation Algebra\<close>
 theory Sep_Algebra_Add
 imports "Separation_Algebra.Sep_Tactics"
 begin
+
+paragraph \<open>Summary\<close>
+
+text \<open>Some miscellaneous theory about spearation algebras.\<close>
+
+
 
 section \<open>Simp-Lemmas for Separation Algebra\<close>
 

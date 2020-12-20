@@ -1,7 +1,19 @@
-theory Expectations
+\<^marker>\<open>creator "Maximilian P. L. Haslbeck"\<close>
+chapter \<open>Quantitative Separation Logic for expectations\<close>
+theory QSL_For_Expectations
 imports
- QuantSepConState
+ Assertions_With_State
 begin
+
+
+paragraph \<open>Summary\<close>
+
+text \<open>This theory instantiates the Quantitative Separation Logic language with the
+        quantale for expectations (ennreal,<=,*,/).
+
+      It is the instance \<open>E\<close> described in the paper by Batz et al. @{cite batzPOPL19}.
+    \<close>
+
 
 section \<open>Misc\<close>
 

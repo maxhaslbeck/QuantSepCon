@@ -1,7 +1,15 @@
+\<^marker>\<open>creator "Maximilian P. L. Haslbeck"\<close>
+chapter \<open>Miscellaneous for QSL\<close>
 theory QSL_Misc
   imports   Sep_Algebra_Add
   "HOL-Library.Extended_Nonnegative_Real"
 begin
+
+
+paragraph \<open>Summary\<close>
+
+text \<open>This theory collects some miscellaneous material for the verification of
+     Quantitative Separation Logic (QSL).\<close>
 
 
 section \<open>Misc\<close>
