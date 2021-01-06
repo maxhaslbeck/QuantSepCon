@@ -20,7 +20,7 @@ subsection "hpGCL"
 datatype hpgcl =   Skip 
                  | Assign vars "stack \<Rightarrow> val"
                  | Seq (left: "hpgcl") (right: "hpgcl") ("_;;/ _"  [60, 61] 60)
-                 | Coin (left: "hpgcl") ennreal (right: " hpgcl") 
+            (*     | Coin (left: "hpgcl") ennreal (right: " hpgcl") *)
                  | If "stack \<Rightarrow> bool" (left: "hpgcl") (right: "hpgcl")
                  | While "stack \<Rightarrow> bool" "hpgcl" ("(WHILE _/ DO _)"  [0, 61] 61)
                  | New vars "(stack \<Rightarrow> val) " (* list *)
@@ -43,7 +43,7 @@ fun Mod where
 | "Mod (Lookup v ae) = {v}"
 
 | "Mod (Seq c1 c2) = Mod c1 \<union> Mod c2"
-| "Mod (Coin c1 _ c2) = Mod c1 \<union> Mod c2"
+(* | "Mod (Coin c1 _ c2) = Mod c1 \<union> Mod c2" *)
 | "Mod (If _ c1 c2) = Mod c1 \<union> Mod c2"
 | "Mod (While _ c) = Mod c"
 

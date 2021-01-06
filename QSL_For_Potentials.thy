@@ -124,7 +124,7 @@ lemma wrap: "\<forall>s h1 h2. to_dual_ord (X (s, h1)) = to_dual_ord (X (s, h2))
     \<Longrightarrow> \<forall>s h1 h2. of_dual_ord (to_dual_ord (X (s, h1))) = of_dual_ord (to_dual_ord (X (s, h2)))"
   by metis
 
-lemma pure\<^sub>e_alt: "pure\<^sub>p X \<longleftrightarrow> (\<forall>s h1 h2. X (s,h1) = X (s,h2))"
+lemma pure\<^sub>p_alt: "pure\<^sub>p X \<longleftrightarrow> (\<forall>s h1 h2. X (s,h1) = X (s,h2))"
   unfolding pure\<^sub>p_def ENNREAL_PLUS.pure_q_def by auto 
      
  
