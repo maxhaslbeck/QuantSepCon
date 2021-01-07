@@ -47,6 +47,11 @@ definition
   "P \<star> Q \<equiv> \<lambda>(s,h). sep_conj_q (\<lambda>h. P(s,h)) (\<lambda>h. Q(s,h)) h "
 
 
+lemma sep_conj_s_q_range: "(emb P \<star> emb Q) (s,h) \<in> {bot, \<^bold>1}"
+  unfolding sep_conj_s_q_def 
+  using sep_conj_q_range[where P=" (\<lambda>h. P(s,h))" and Q=" (\<lambda>h. Q(s,h))"]
+  apply (simp add: emb_def) done
+
 definition "sep_empty_s_q = (\<lambda>(s,h). sep_empty_q h)"
 
 lemma sep_conj_s_q_assoc: 

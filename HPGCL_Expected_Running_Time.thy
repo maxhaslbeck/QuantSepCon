@@ -436,12 +436,289 @@ abbreviation "Supl \<equiv> ENNREAL_PLUS.INFI"
 abbreviation "Infl \<equiv> ENNREAL_PLUS.SUPR"
 
 
+
+lemma INF_to_UNIV': "Infl B (\<lambda>x. if b x then f x else \<infinity>) = Infl (B \<inter> {x. b x}) f "  
+  apply(rule antisym)
+  subgoal 
+    by (smt ENNREAL_PLUS.SUP_mono Int_Collect eq_iff)
+  subgoal
+    apply(rule Inf_greatest)
+    apply auto apply(rule Inf_lower2)
+    by auto
+  done
+
+lemma INF_to_UNIV'': "Infl B (\<lambda>(x,y). if b (x,y) then f (x,y) else \<infinity>) = Infl (B \<inter> {(x,y). b (x,y)}) f " 
+  using INF_to_UNIV' by auto
+
+
 definition "pt_m ae e = ((pt ae e)\<star>\<^sub>p(emb\<^sub>p (\<lambda>_. True)))"
 
-lemma lemmaB1: "((pt ae e) \<star>\<^sub>p ( (pt ae e) -\<star>\<^sub>p X)) = (pt_m ae e + X)"
-    
+lemma pt_m_0orinf: "pt_m ae e sh \<in> {\<infinity>, 0}"
+  unfolding pt_m_def pt_emb
+  apply(simp only: star_pot_method_pred_range) done
 
-  sorry
+
+lemma all_pt_false_if_pt_m_false':
+  assumes "pt_m ae e (s, h) = top"
+  shows "\<forall>h1 h2. ((h1 ## h2 \<and> h=h1+h2) \<longrightarrow> pt ae e (s, h1) = top)"
+proof (rule ccontr)
+  assume "\<not> (\<forall>h1 h2. h1 ## h2 \<and> h = h1 + h2 \<longrightarrow> ([ae \<mapsto> e]) (s, h1) = top)"
+  then have "\<exists>h1 h2. h1 ## h2 \<and> h = h1 + h2 \<and> ([ae \<mapsto> e]) (s, h1) \<noteq> top" by auto
+  then obtain h1 h2 where p: "h1 ## h2" "h = h1 + h2" and "([ae \<mapsto> e]) (s, h1) \<noteq> top" by auto
+  then have t: "([ae \<mapsto> e]) (s, h1) < top" 
+    using nn by blast 
+
+  have "pt_m ae e (s, h) \<le> ([ae \<mapsto> e]) (s, h1)"
+    unfolding pt_m_def 
+    unfolding star_pot_method_alt''
+    apply auto
+    apply(rule Inf_lower)
+    apply(rule image_eqI[where x="(h1,h2)"])
+    using p by (auto simp: emb\<^sub>p_alt)
+  also note t
+  finally show "False" using assms by simp
+qed
+
+lemma "dom (map_of_heap h) = {x. h x \<noteq> ZERO}"
+  unfolding dom_def map_of_heap_def by (auto split: tsa_opt.splits)
+
+
+(* TODO: cleanup this mess *)
+lemma one_part_and_the_other:
+  fixes h1 :: "int \<Rightarrow> int tsa_opt"
+  assumes "h1##h2" " h=h1+h2"                        
+  assumes "h1'##h2' " " h=h1'+h2'"
+  assumes "h1=h1'"
+  shows "h2=h2'"
+proof -
+  from assms(1,2) have a: "dom (map_of_heap h1) \<union> dom (map_of_heap h2) =  dom (map_of_heap h)"
+    unfolding plus_tsa_opt_def plus_fun_def map_of_heap_def apply (auto split: tsa_opt.splits) 
+     apply (metis sep_disj_fun_def sep_disj_tsa_opt_def tsa_opt.distinct(1))
+     apply (metis sep_disj_fun_def sep_disj_tsa_opt_def tsa_opt.distinct(1))
+    done
+  from assms(3,4) have b: "dom (map_of_heap h1') \<union> dom (map_of_heap h2') =  dom (map_of_heap h)"
+    unfolding plus_tsa_opt_def plus_fun_def map_of_heap_def apply (auto split: tsa_opt.splits) 
+     apply (metis sep_disj_fun_def sep_disj_tsa_opt_def tsa_opt.distinct(1))
+     apply (metis sep_disj_fun_def sep_disj_tsa_opt_def tsa_opt.distinct(1))
+    done
+
+  from assms(1) have c: "dom (map_of_heap h1) \<inter> dom (map_of_heap h2) = {}"
+    unfolding plus_tsa_opt_def sep_disj_fun_def sep_disj_tsa_opt_def plus_fun_def map_of_heap_def apply (auto split: tsa_opt.splits) 
+    by (metis tsa_opt.distinct(1)) 
+
+  from assms(3) have d: "dom (map_of_heap h1') \<inter> dom (map_of_heap h2') = {}"
+    unfolding plus_tsa_opt_def sep_disj_fun_def sep_disj_tsa_opt_def plus_fun_def map_of_heap_def apply (auto split: tsa_opt.splits) 
+    by (metis tsa_opt.distinct(1)) 
+
+  have f: "\<And>A A' B B' C. A=A' \<Longrightarrow> A \<union> B = C \<Longrightarrow> A' \<union> B' = C \<Longrightarrow> A \<inter> B = {} \<Longrightarrow> A' \<inter> B' = {} \<Longrightarrow> B = B'" by blast  
+  have s: "dom (map_of_heap h2) = dom (map_of_heap h2')" apply(rule f[OF _ a b c d]) using assms(5) by simp
+
+  from assms(1,2) have z: "\<And>x. x\<in>dom  (map_of_heap h2) \<Longrightarrow> h2 x = h x"
+    unfolding plus_tsa_opt_def plus_fun_def map_of_heap_def apply (auto split: tsa_opt.splits) 
+    by (metis sep_disj_fun_def sep_disj_tsa_opt_def tsa_opt.distinct(1)) 
+
+  from assms(3,4) have z': "\<And>x. x\<in>dom  (map_of_heap h2') \<Longrightarrow> h2' x = h x"
+    unfolding plus_tsa_opt_def plus_fun_def map_of_heap_def apply (auto split: tsa_opt.splits) 
+    by (metis sep_disj_fun_def sep_disj_tsa_opt_def tsa_opt.distinct(1))         
+
+  show "h2=h2'"
+    apply(rule ext)
+    subgoal for x
+      apply(cases "x\<in>dom  (map_of_heap h2')") 
+      subgoal using z z' s by simp
+      subgoal using s 
+        by (metis domIff map_of_heap_def option.distinct(1) tsa_opt.case_eq_if)
+      done
+    done
+qed
+
+lemma pt_precise_easy:
+  assumes "pt ae e (s,h1) = 0"
+  assumes "pt ae e (s,h1') = 0"
+  shows "h1=h1'" 
+proof (rule ccontr)
+  assume n: "h1 \<noteq> h1'"
+  from assms(1) have 1: "\<forall>a. (a= ae s \<or> h1 a = ZERO)"
+    unfolding pt_def  apply auto unfolding map_of_heap_def
+    apply (auto split: if_splits) 
+    by (metis domIff option.distinct(1) singleton_iff tsa_opt.case_eq_if) 
+      
+  from assms(2) have 2: "\<forall>a. (a= ae s \<or> h1' a = ZERO)"
+    unfolding pt_def  apply auto unfolding map_of_heap_def
+    apply (auto split: if_splits) 
+    by (metis domIff option.distinct(1) singleton_iff tsa_opt.case_eq_if) 
+
+  from n 1 2 have K: "h1 (ae s) \<noteq> h1' (ae s)"  
+    by (metis ext) 
+
+  have a1: "h1 (ae s) = TRIV (e s)" using 1 
+    using assms(1) unfolding  pt_def by (auto split: if_splits) 
+  have a2: "h1' (ae s) = TRIV (e s)" 
+    using assms(2) pt_def by (auto split: if_splits) 
+
+
+  from K a1 a2 show False by simp
+qed
+
+lemma pt_precise:
+  assumes "h1##h2 \<and> h=h1+h2 \<and> pt ae e (s,h1) = 0"
+  assumes "h1'##h2' \<and> h=h1'+h2' \<and> pt ae e (s,h1') = 0"
+  shows "h1=h1'" 
+proof (rule ccontr)
+  assume n: "h1 \<noteq> h1'"
+  from assms(1) have 1: "\<forall>a. (a= ae s \<or> h1 a = ZERO)"
+    unfolding pt_def  apply auto unfolding map_of_heap_def
+    apply (auto split: if_splits) 
+    by (metis domIff option.distinct(1) singleton_iff tsa_opt.case_eq_if) 
+      
+  from assms(2) have 2: "\<forall>a. (a= ae s \<or> h1' a = ZERO)"
+    unfolding pt_def  apply auto unfolding map_of_heap_def
+    apply (auto split: if_splits) 
+    by (metis domIff option.distinct(1) singleton_iff tsa_opt.case_eq_if) 
+
+  from n 1 2 have K: "h1 (ae s) \<noteq> h1' (ae s)"  
+    by (metis ext) 
+
+  have a1: "h1 (ae s) \<noteq> ZERO" using 1 
+    using assms(1) pt_def by auto 
+  have a2: "h1' (ae s) \<noteq> ZERO" 
+    using assms(2) pt_def by auto 
+
+  from assms(1) a1 have K1: "h (ae s) = h1 (ae s)" 
+    by (metis plus_fun' sep_disj_fun_def sep_disj_tsa_opt_def triv_Z_lower2(1)) 
+  from assms(2) a2 have K2: "h (ae s) = h1' (ae s)" 
+    by (metis plus_fun' sep_disj_fun_def sep_disj_tsa_opt_def triv_Z_lower2(1)) 
+
+  from K K1 K2 show False by simp
+qed
+
+
+lemma pt_precise':
+  assumes "h1##h2" "h=h1+h2" "pt ae e (s,h1) = 0"
+  assumes "h1'##h2'" "h=h1'+h2'" "h1~=h1'"
+  shows "pt ae e (s,h1') \<noteq> 0" 
+  using pt_precise[of h1 h2 h ae e s] assms by blast
+
+lemma pt_precise'b:
+  assumes "h1##h2" "h=h1+h2" "pt ae e (s,h1) = 0"
+  assumes "h1'##h2'" "h=h1'+h2'" "h1~=h1'"
+  shows "~ ptb ae e (s,h1')" 
+  using pt_precise[of h1 h2 h ae e s] assms unfolding pt_emb emb\<^sub>p_alt
+  by meson 
+
+
+lemma pt_precise'':
+  assumes "h1##h2" "h=h1+h2" "pt ae e (s,h1) = 0"
+  assumes "h1'##h2'" "h=h1'+h2'" "h1~=h1'"
+  shows "pt ae e (s,h1') = top" 
+  using pt_precise'[OF assms] 
+  using pt_def by auto 
+
+
+lemma exists_pt_true_if_pt_m_true:
+  assumes "pt_m ae e (s, h) = 0"
+  shows "(\<exists>h1 h2. h1##h2 \<and> h=h1+h2 \<and> pt ae e (s,h1) = 0)"
+proof (rule ccontr)
+  assume "~(\<exists>h1 h2. h1##h2 \<and> h=h1+h2 \<and> pt ae e (s,h1) = 0)" 
+  then have "\<forall>h1 h2. h1##h2 \<and> h=h1+h2 \<longrightarrow> pt ae e (s,h1) \<noteq> 0" by blast 
+  then have "\<And>h1 h2. h1##h2 \<Longrightarrow>  h=h1+h2 \<Longrightarrow>  pt ae e (s,h1) = \<infinity>"  
+    unfolding pt_def by auto
+  then have "\<infinity> \<le> pt_m ae e (s, h)"
+    unfolding pt_m_def 
+    unfolding star_pot_method_alt''
+    apply simp
+    apply(rule Inf_greatest)
+    by auto
+  then show False using assms by auto
+qed 
+
+
+
+lemma exists_pt_true_if_pt_m_true:
+  assumes "pt_m ae e (s, h) = 0"
+  shows "(\<exists>h1 h2. h1##h2 \<and> h=h1+h2 \<and> pt ae e (s,h1) = 0 \<and> (\<forall>h1'. h\<noteq>h1 \<longrightarrow>  pt ae e (s,h1') = \<infinity>) )"
+  oops
+
+lemma all_pt_false_if_pt_m_false:
+  assumes "pt_m ae e (s, h) = \<infinity>"
+  shows "h1 ## h2 \<Longrightarrow> h=h1+h2 \<Longrightarrow> pt ae e (s, h1) = \<infinity>"
+  using assms all_pt_false_if_pt_m_false' unfolding infinity_ennreal_def  by blast
+ 
+lemma lemmaB1': "((pt ae e) \<star>\<^sub>p ( (pt ae e) -\<star>\<^sub>p X)) (s,h) = (pt_m ae e + X) (s,h)"
+proof (cases "pt_m ae e (s,h) = 0")
+  case True
+
+  from exists_pt_true_if_pt_m_true[OF True]
+  obtain h1 h2 where A: "h1 ## h2" "h = h1 + h2" "([ae \<mapsto> e]) (s, h1) = 0"
+    by auto
+
+  thm pt_precise
+
+  have aga: "{h'. h2 ## h' \<and> ptb ae e (s, h')}
+        = {h1}"
+    apply auto
+    subgoal apply(rule pt_precise_easy[OF _ A(3)]) unfolding pt_emb emb\<^sub>p_alt by simp
+    subgoal using A by (simp add: sep_disj_commute)
+    subgoal using A(3) unfolding pt_emb emb\<^sub>p_alt by (auto split: if_splits)
+    done
+
+  have "((pt ae e) \<star>\<^sub>p ( (pt ae e) -\<star>\<^sub>p X)) (s,h)
+        = Infl {(x, y). h = x + y \<and> x ## y} (\<lambda>(x, y). ([ae \<mapsto> e]) (s, x) + ([ae \<mapsto> e] -\<star>\<^sub>p X) (s, y))"
+    unfolding star_pot_method_alt'' apply simp done
+  also have "\<dots> = Infl {(x, y). h = x + y \<and> x ## y} (\<lambda>(x, y). 
+          (if x=h1 \<and> y=h2 then ([ae \<mapsto> e]) (s, h1) + ([ae \<mapsto> e] -\<star>\<^sub>p X) (s, h2) else \<infinity> ))"
+    apply(rule INF_cong) apply simp
+    apply auto
+    subgoal using pt_precise''[OF A] by simp
+    subgoal using pt_precise''[OF A] one_part_and_the_other[OF A(1,2)] 
+      by blast 
+    done
+  also have "\<dots> = Infl {(x,y). h = x+ y \<and> x##y \<and> x=h1 \<and> y=h2} (\<lambda>_. ([ae \<mapsto> e]) (s, h1) + ([ae \<mapsto> e] -\<star>\<^sub>p X) (s, h2))"
+    apply(rule antisym)
+    subgoal  
+      apply(rule Inf_mono) by auto
+    subgoal
+      apply(rule Inf_greatest)
+      by auto 
+    done
+  also have "\<dots> = ([ae \<mapsto> e]) (s, h1) + ([ae \<mapsto> e] -\<star>\<^sub>p X) (s, h2)"
+    apply(subst INF_constant) using A(1,2) by auto
+  also have "\<dots> = ([ae \<mapsto> e] -\<star>\<^sub>p X) (s, h2)" 
+    using A(3) by simp
+  also have "\<dots> = Supl {h'. h2 ## h' \<and> ptb ae e (s, h')} (\<lambda>h'. X (s, h2 + h'))"
+    unfolding pt_emb  wand_pot_method_emb_alt apply simp done
+  also have "\<dots> = X (s, h2 + h1)"
+    unfolding aga apply simp done
+  also have "\<dots> = X (s, h)"
+    using A(1,2) sep_add_commute by fastforce  
+  also have "\<dots> = (pt_m ae e + X) (s,h)"
+    using True apply simp done
+  finally show ?thesis .
+next
+  case False
+  with pt_m_0orinf have *: "pt_m ae e (s,h) = \<infinity>" by fast
+
+  have "((pt ae e) \<star>\<^sub>p ( (pt ae e) -\<star>\<^sub>p X)) (s,h)
+        = Infl {(x, y). h = x + y \<and> x ## y} (\<lambda>(x,y). ([ae \<mapsto> e]) (s, x) + ([ae \<mapsto> e] -\<star>\<^sub>p X) (s, y))"  
+    unfolding star_pot_method_alt'' apply simp done 
+  also have "\<dots> = Infl {(x, y). h = x + y \<and> x ## y} (\<lambda>(x,y). \<infinity> + ([ae \<mapsto> e] -\<star>\<^sub>p X) (s, y))"
+    apply(rule INF_cong) 
+     apply auto
+    subgoal for a b 
+      using all_pt_false_if_pt_m_false[OF *, of a]  unfolding infinity_ennreal_def  by blast
+    done
+  also have "\<dots> = \<infinity>"
+    by simp
+  also have "\<dots> = (pt_m ae e + X) (s,h)"
+    using * by simp
+  finally show ?thesis .
+qed
+ 
+lemma lemmaB1: "((pt ae e) \<star>\<^sub>p ( (pt ae e) -\<star>\<^sub>p X)) = (pt_m ae e + X) "
+  apply(rule ext)
+  apply(case_tac x) apply safe
+  apply(rule lemmaB1') done
+
 
 lemma pt_m_reduce: "a ## b \<Longrightarrow> pt_m x2 e (s, a + b) \<le> pt_m x2 e (s, a)"
   unfolding pt_m_def
@@ -466,6 +743,7 @@ lemma ert_Lookup_alt': "ert (Lookup x ae) X =
 
 lemma Inf_swap: "\<And>X f. Infl UNIV (\<lambda>u. Infl X (\<lambda>x. f u x)) = Infl X (\<lambda>x. Infl UNIV (\<lambda>u. f u x))"
     using ENNREAL_PLUS.SUP_commute by blast 
+
 
 
 

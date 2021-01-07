@@ -100,6 +100,15 @@ lemma emb\<^sub>p_alt2: "emb\<^sub>p = (\<lambda>P sh. (if P sh then 0 else \<in
 lemma grr: "(\<lambda>h. emb\<^sub>p P (s, h)) = emb\<^sub>p (\<lambda>h. P (s, h))" 
   unfolding emb\<^sub>p_alt by auto
 
+thm ENNREAL_PLUS.sep_conj_q_range
+
+lemma star_pot_method_pred_range: "((emb\<^sub>p P) \<star>\<^sub>p (emb\<^sub>p Q)) h \<in> {\<infinity>, 0}"
+  apply(cases h)
+  using ENNREAL_PLUS.sep_conj_s_q_range[of P Q]
+  unfolding emb\<^sub>p_def star_pot_method_def infinity_ennreal_def
+  by simp
+
+
 lemma wand_pot_method_emb_alt:
   "((emb\<^sub>p P) -\<star>\<^sub>p Q) = (\<lambda>(s, h). SUP h'\<in>{h'. h ## h' \<and> P (s, h')}. Q (s, h + h'))"
   unfolding wand_pot_method_def 
